@@ -4,16 +4,30 @@ A small, private baby growth-chart app. It runs as one Docker container, stores 
 
 ## Start it
 
-This stack is intended to sit behind Traefik on the same EC2 host. Copy the example settings and replace the hostname and Traefik names with the ones used by the existing proxy:
+Copy the example settings if you do not already have a `.env` file:
 
     cp .env.example .env
 
-The required settings are:
+The example settings run the app locally without Traefik. `APP_PORT` is the host-side port, so it can be changed without changing the app's internal port 3000:
 
-- APP_HOST: public DNS name for this app, such as baby.example.com
-- TRAEFIK_NETWORK: external Docker network already shared by Traefik
-- TRAEFIK_ENTRYPOINT: HTTPS entrypoint name, normally websecure
-- TRAEFIK_CERT_RESOLVER: certificate resolver configured in Traefik, normally letsencrypt
+    docker compose up -d --build
+
+Open http://localhost:3081, replacing `3081` if you selected a different `APP_PORT` in `.env`.
+
+### EC2 with Traefik
+
+On EC2, change these `.env` settings:
+
+    APP_HOST=baby.example.com
+    APP_PORT=3081
+    COOKIE_SECURE=true
+    TRAEFIK_ENABLED=true
+    TRAEFIK_NETWORK=traefik
+    TRAEFIK_NETWORK_EXTERNAL=true
+    TRAEFIK_ENTRYPOINT=websecure
+    TRAEFIK_CERT_RESOLVER=letsencrypt
+
+Replace the hostname, host port, network, entrypoint, and certificate resolver with the values used on that host. The published host port is bound to `127.0.0.1`; public traffic still reaches the container through Traefik.
 
 If the shared network does not exist yet, create it once and attach the Traefik service to it as well:
 
@@ -23,7 +37,7 @@ Then start the application:
 
     docker compose up -d --build
 
-Open the HTTPS hostname configured as APP_HOST. The application does not publish a host port; Traefik reaches port 3000 over the shared Docker network.
+Open the HTTPS hostname configured as `APP_HOST`. Traefik reaches port 3000 over the shared Docker network.
 
 Enter an email and a password of at least 8 characters. A new email creates an account; an existing email signs in. There is intentionally no password-reset flow.
 
@@ -67,7 +81,7 @@ Supported units:
 
 SQLite data is stored in the Docker volume measure-the-baby_growth_data. The in-app CSV export is the simplest portable backup. For a full backup, stop the stack and copy the contents of that named volume with Docker Desktop or your usual volume-backup tool.
 
-HTTPS-only session cookies are enabled in docker-compose.yml because Traefik terminates TLS for this app.
+Set `COOKIE_SECURE=true` on EC2 so session cookies are HTTPS-only. Keep it `false` for local HTTP development.
 
 ## Growth references
 

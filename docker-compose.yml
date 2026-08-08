@@ -5,17 +5,19 @@ services:
     restart: unless-stopped
     expose:
       - "3000"
+    ports:
+      - "127.0.0.1:${APP_PORT:?Set APP_PORT in .env}:3000"
     environment:
       DATABASE_PATH: /data/growth.sqlite
       PORT: 3000
       SESSION_DAYS: 30
-      COOKIE_SECURE: "true"
+      COOKIE_SECURE: "${COOKIE_SECURE:-true}"
     volumes:
       - growth_data:/data
     networks:
       - traefik
     labels:
-      - "traefik.enable=true"
+      - "traefik.enable=${TRAEFIK_ENABLED:-true}"
       - "traefik.docker.network=${TRAEFIK_NETWORK:-traefik}"
       - "traefik.http.routers.measure-the-baby.rule=Host(`${APP_HOST:?Set APP_HOST in .env}`)"
       - "traefik.http.routers.measure-the-baby.entrypoints=${TRAEFIK_ENTRYPOINT:-websecure}"
@@ -39,5 +41,5 @@ volumes:
 
 networks:
   traefik:
-    external: true
+    external: ${TRAEFIK_NETWORK_EXTERNAL:-true}
     name: "${TRAEFIK_NETWORK:-traefik}"
