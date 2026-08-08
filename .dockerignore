@@ -1,0 +1,8 @@
+.git
+.agents
+.codex
+node_modules
+tmp
+tests
+*.log
+growth.sqlite*

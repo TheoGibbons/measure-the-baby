@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Measure the Baby">
+  <rect width="512" height="512" rx="112" fill="#164d48"/>
+  <path d="M106 337C160 321 175 241 224 236c41-4 47 55 84 53 35-2 45-50 98-76" fill="none" stroke="#f8f2e5" stroke-width="32" stroke-linecap="round"/>
+  <circle cx="106" cy="337" r="25" fill="#dc6c55" stroke="#f8f2e5" stroke-width="14"/>
+  <circle cx="224" cy="236" r="25" fill="#dc6c55" stroke="#f8f2e5" stroke-width="14"/>
+  <circle cx="308" cy="289" r="25" fill="#dc6c55" stroke="#f8f2e5" stroke-width="14"/>
+  <circle cx="406" cy="213" r="25" fill="#dc6c55" stroke="#f8f2e5" stroke-width="14"/>
+  <path d="M378 139h53v53" fill="none" stroke="#f8f2e5" stroke-width="24" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

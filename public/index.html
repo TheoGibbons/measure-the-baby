@@ -1,0 +1,1819 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#143f3c">
+  <meta name="description" content="Private, printable growth charts for your baby.">
+  <link rel="manifest" href="/manifest.webmanifest">
+  <link rel="icon" href="/icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="/icon.svg">
+  <title>Measure the Baby</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #17302e;
+      --muted: #667674;
+      --paper: #fffef9;
+      --canvas: #f2f0e8;
+      --line: #d8d7cd;
+      --line-dark: #b9beb7;
+      --green: #164d48;
+      --green-2: #20736a;
+      --green-soft: #dbece7;
+      --coral: #dc6c55;
+      --coral-soft: #f8e1da;
+      --blue: #347895;
+      --gold: #bc8331;
+      --danger: #a83b36;
+      --shadow: 0 18px 50px rgba(28, 49, 46, .09);
+      --radius: 10px;
+    }
+
+    * { box-sizing: border-box; }
+
+    html { min-width: 320px; background: var(--canvas); }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at 8% -10%, rgba(220, 108, 85, .10), transparent 34rem),
+        radial-gradient(circle at 100% 0%, rgba(32, 115, 106, .11), transparent 32rem),
+        var(--canvas);
+      -webkit-font-smoothing: antialiased;
+    }
+
+    button, input, select, textarea { font: inherit; }
+
+    button {
+      color: inherit;
+      cursor: pointer;
+    }
+
+    button:disabled { cursor: not-allowed; opacity: .55; }
+
+    :focus-visible {
+      outline: 3px solid rgba(52, 120, 149, .35);
+      outline-offset: 2px;
+    }
+
+    .hidden { display: none !important; }
+
+    .auth-view {
+      min-height: 100vh;
+      display: grid;
+      grid-template-columns: minmax(0, 1.1fr) minmax(360px, .9fr);
+    }
+
+    .auth-story {
+      min-height: 100vh;
+      padding: clamp(36px, 6vw, 88px);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      background: var(--green);
+      color: #f7f4ea;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .auth-story::before,
+    .auth-story::after {
+      content: "";
+      position: absolute;
+      border: 1px solid rgba(255,255,255,.12);
+      border-radius: 50%;
+      pointer-events: none;
+    }
+
+    .auth-story::before { width: 460px; height: 460px; right: -180px; top: -140px; }
+    .auth-story::after { width: 260px; height: 260px; right: 60px; top: 60px; }
+
+    .brand {
+      display: inline-flex;
+      align-items: center;
+      gap: 11px;
+      font-weight: 760;
+      letter-spacing: -.02em;
+    }
+
+    .brand-mark {
+      width: 38px;
+      height: 38px;
+      display: grid;
+      place-items: center;
+      border: 2px solid currentColor;
+      border-radius: 50% 50% 46% 54%;
+      font-size: 19px;
+      line-height: 1;
+      transform: rotate(-6deg);
+    }
+
+    .auth-copy { position: relative; z-index: 1; max-width: 640px; }
+
+    .auth-copy .eyebrow {
+      margin: 0 0 18px;
+      color: #acd3ca;
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: .16em;
+      text-transform: uppercase;
+    }
+
+    .auth-copy h1 {
+      margin: 0;
+      max-width: 650px;
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: clamp(47px, 6vw, 84px);
+      font-weight: 500;
+      letter-spacing: -.055em;
+      line-height: .96;
+    }
+
+    .auth-copy p {
+      max-width: 500px;
+      margin: 27px 0 0;
+      color: #cce1db;
+      font-size: clamp(16px, 1.5vw, 20px);
+      line-height: 1.55;
+    }
+
+    .auth-foot { color: #abc8c1; font-size: 12px; line-height: 1.5; }
+
+    .auth-panel {
+      min-height: 100vh;
+      padding: 32px clamp(28px, 6vw, 88px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(255, 254, 249, .72);
+      backdrop-filter: blur(14px);
+    }
+
+    .auth-card { width: min(440px, 100%); }
+
+    .auth-card h2 {
+      margin: 0;
+      font-size: clamp(30px, 4vw, 46px);
+      letter-spacing: -.045em;
+      font-weight: 730;
+    }
+
+    .auth-card > p {
+      margin: 13px 0 28px;
+      color: var(--muted);
+      line-height: 1.55;
+    }
+
+    .field { display: grid; gap: 7px; margin-bottom: 17px; }
+
+    .field label,
+    .row-label {
+      font-size: 12px;
+      font-weight: 760;
+      letter-spacing: .025em;
+    }
+
+    input, select, textarea {
+      width: 100%;
+      min-height: 44px;
+      border: 1px solid var(--line-dark);
+      border-radius: 7px;
+      padding: 10px 12px;
+      color: var(--ink);
+      background: #fffefb;
+    }
+
+    textarea { resize: vertical; min-height: 44px; }
+
+    input:hover, select:hover, textarea:hover { border-color: #8e9996; }
+    input:focus, select:focus, textarea:focus { border-color: var(--green-2); outline: 3px solid rgba(32, 115, 106, .12); }
+
+    .primary,
+    .secondary,
+    .text-button,
+    .danger-button,
+    .add-measure,
+    .meta-button,
+    .icon-button {
+      min-height: 42px;
+      border-radius: 7px;
+      border: 1px solid transparent;
+      padding: 9px 15px;
+      font-weight: 720;
+      transition: transform .12s ease, background .12s ease, border-color .12s ease;
+    }
+
+    .primary { color: white; background: var(--green); }
+    .primary:hover { background: #0f403b; transform: translateY(-1px); }
+    .secondary { background: #fffefb; border-color: var(--line-dark); }
+    .secondary:hover { border-color: #8d9a96; background: white; }
+    .text-button { min-height: 36px; padding: 7px 9px; background: transparent; }
+    .text-button:hover { background: rgba(22,77,72,.07); }
+    .danger-button { color: var(--danger); background: #fff; border-color: #d9aaa6; }
+    .danger-button:hover { background: #fff5f3; }
+    .wide { width: 100%; }
+
+    .auth-error {
+      min-height: 22px;
+      margin: 3px 0 10px;
+      color: var(--danger);
+      font-size: 13px;
+      line-height: 1.4;
+    }
+
+    .auth-note {
+      margin-top: 20px;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.55;
+    }
+
+    .app-view { min-height: 100vh; padding-bottom: 60px; }
+
+    .site-header {
+      position: sticky;
+      z-index: 20;
+      top: 0;
+      min-height: 66px;
+      padding: 10px clamp(18px, 3vw, 46px);
+      display: flex;
+      align-items: center;
+      gap: 18px;
+      background: rgba(255, 254, 249, .92);
+      border-bottom: 1px solid var(--line);
+      backdrop-filter: blur(15px);
+    }
+
+    .site-header .brand { min-width: max-content; color: var(--green); }
+    .site-header .brand-mark { width: 34px; height: 34px; font-size: 16px; }
+
+    .profile-switcher {
+      margin-left: auto;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .profile-switcher label {
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 760;
+      letter-spacing: .06em;
+      text-transform: uppercase;
+    }
+
+    .profile-switcher select { width: min(240px, 26vw); min-height: 40px; padding-block: 7px; }
+
+    .header-actions { display: flex; align-items: center; gap: 3px; }
+
+    .header-email {
+      max-width: 180px;
+      overflow: hidden;
+      color: var(--muted);
+      font-size: 12px;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .offline-badge {
+      padding: 4px 7px;
+      color: #7a4f13;
+      background: #f8eac9;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 800;
+    }
+
+    .page-shell { width: min(1600px, calc(100% - 36px)); margin: 0 auto; }
+
+    .profile-hero {
+      min-height: 186px;
+      padding: clamp(30px, 5vw, 62px) 0 28px;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 26px;
+      align-items: end;
+      border-bottom: 1px solid var(--line-dark);
+    }
+
+    .profile-label {
+      margin: 0 0 9px;
+      color: var(--green-2);
+      font-size: 11px;
+      font-weight: 850;
+      letter-spacing: .17em;
+      text-transform: uppercase;
+    }
+
+    .profile-hero h1 {
+      margin: 0;
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: clamp(42px, 6vw, 78px);
+      font-weight: 500;
+      letter-spacing: -.055em;
+      line-height: .96;
+    }
+
+    .profile-meta {
+      margin-top: 24px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 9px;
+    }
+
+    .meta-button {
+      min-height: 37px;
+      padding: 7px 11px;
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      color: var(--ink);
+      background: rgba(255, 254, 249, .7);
+      border-color: var(--line-dark);
+      font-size: 13px;
+    }
+
+    .meta-button:hover { border-color: var(--green-2); background: white; }
+    .meta-button .meta-kind { color: var(--muted); font-size: 10px; letter-spacing: .08em; text-transform: uppercase; }
+    .edit-hint { color: var(--green-2); font-size: 11px; }
+
+    .inline-editor {
+      margin-top: 14px;
+      width: min(420px, 100%);
+      padding: 15px;
+      display: grid;
+      grid-template-columns: 1fr auto auto;
+      gap: 8px;
+      align-items: end;
+      background: var(--paper);
+      border: 1px solid var(--line-dark);
+      border-radius: 8px;
+      box-shadow: var(--shadow);
+    }
+
+    .inline-editor .field { margin: 0; }
+    .inline-editor button { min-height: 44px; }
+
+    .hero-summary {
+      min-width: 230px;
+      display: grid;
+      grid-template-columns: repeat(2, minmax(90px, 1fr));
+      gap: 1px;
+      border: 1px solid var(--line-dark);
+      background: var(--line-dark);
+    }
+
+    .summary-cell { padding: 17px; background: var(--paper); }
+    .summary-cell strong { display: block; margin-top: 5px; font-size: 22px; letter-spacing: -.035em; }
+    .summary-cell span { color: var(--muted); font-size: 10px; font-weight: 750; letter-spacing: .08em; text-transform: uppercase; }
+
+    .setup-banner {
+      margin-top: 22px;
+      padding: 15px 17px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      color: #60451e;
+      background: #fbefd4;
+      border: 1px solid #e5c888;
+      border-radius: 8px;
+      font-size: 13px;
+      line-height: 1.45;
+    }
+
+    .setup-banner strong { color: #513712; }
+    .setup-banner .text-button { margin-left: auto; color: #513712; white-space: nowrap; }
+
+    .measure-toolbar {
+      padding: 22px 0;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 9px;
+      align-items: center;
+    }
+
+    .add-measure {
+      min-height: 44px;
+      padding: 9px 15px 9px 11px;
+      display: inline-flex;
+      align-items: center;
+      gap: 9px;
+      color: var(--ink);
+      background: var(--paper);
+      border-color: var(--line-dark);
+    }
+
+    .add-measure:hover { border-color: var(--green-2); transform: translateY(-1px); box-shadow: 0 7px 20px rgba(23,48,46,.06); }
+    .measure-dot { width: 12px; height: 12px; border-radius: 50%; background: var(--metric-color); box-shadow: inset 0 0 0 3px rgba(255,255,255,.7); }
+    .toolbar-spacer { flex: 1; }
+
+    .charts-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 18px;
+    }
+
+    .chart-card {
+      min-width: 0;
+      height: clamp(470px, 47vw, 670px);
+      display: flex;
+      flex-direction: column;
+      background: var(--paper);
+      border: 1px solid var(--line-dark);
+      box-shadow: 0 7px 24px rgba(29,45,43,.035);
+      overflow: hidden;
+    }
+
+    .chart-head {
+      min-height: 67px;
+      padding: 14px 17px 12px;
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .chart-index {
+      padding-top: 3px;
+      color: var(--metric-color);
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: 20px;
+      font-style: italic;
+    }
+
+    .chart-title { min-width: 0; }
+    .chart-title h2 { margin: 0; font-size: 17px; letter-spacing: -.025em; }
+    .chart-title p { margin: 3px 0 0; color: var(--muted); font-size: 10px; line-height: 1.35; }
+    .chart-head .text-button { margin-left: auto; min-height: 32px; padding: 5px 7px; color: var(--green-2); font-size: 11px; }
+
+    .chart-stage {
+      position: relative;
+      min-height: 0;
+      flex: 1;
+      background:
+        linear-gradient(rgba(22,77,72,.018) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(22,77,72,.018) 1px, transparent 1px);
+      background-size: 16px 16px;
+    }
+
+    .chart-stage canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+
+    .chart-empty {
+      position: absolute;
+      z-index: 2;
+      left: 50%;
+      top: 48%;
+      width: min(300px, 78%);
+      transform: translate(-50%, -50%);
+      padding: 16px;
+      color: var(--muted);
+      background: rgba(255,254,249,.92);
+      border: 1px solid var(--line);
+      text-align: center;
+      font-size: 12px;
+      line-height: 1.5;
+      pointer-events: none;
+    }
+
+    .chart-table-wrap {
+      position: absolute;
+      z-index: 3;
+      right: 15px;
+      bottom: 32px;
+      width: min(48%, 340px);
+      max-height: 35%;
+      overflow: auto;
+      background: rgba(255,254,249,.94);
+      border: 1px solid var(--line-dark);
+      box-shadow: 0 3px 15px rgba(23,48,46,.07);
+      scrollbar-width: thin;
+    }
+
+    .chart-table {
+      width: 100%;
+      border-collapse: collapse;
+      table-layout: fixed;
+      font-size: 8.5px;
+      line-height: 1.22;
+    }
+
+    .chart-table th {
+      position: sticky;
+      top: 0;
+      z-index: 1;
+      padding: 4px 4px;
+      color: var(--muted);
+      background: #f5f3eb;
+      border-bottom: 1px solid var(--line-dark);
+      font-size: 7.5px;
+      letter-spacing: .04em;
+      text-align: left;
+      text-transform: uppercase;
+    }
+
+    .chart-table td {
+      padding: 4px;
+      overflow: hidden;
+      border-bottom: 1px solid #e7e4dc;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .chart-table tbody tr[data-id] { cursor: pointer; }
+    .chart-table tbody tr[data-id]:hover { background: var(--green-soft); }
+    .chart-table th:nth-child(1) { width: 25%; }
+    .chart-table th:nth-child(2) { width: 22%; }
+    .chart-table th:nth-child(3) { width: 18%; }
+    .chart-table td:last-child { color: var(--muted); }
+    .calculated-tag { color: var(--blue); font-weight: 750; }
+
+    .chart-footnote {
+      min-height: 28px;
+      padding: 7px 14px;
+      display: flex;
+      gap: 14px;
+      color: var(--muted);
+      background: #faf8f2;
+      border-top: 1px solid var(--line);
+      font-size: 9px;
+      line-height: 1.35;
+    }
+
+    .chart-footnote .legend-line {
+      display: inline-block;
+      width: 16px;
+      height: 0;
+      margin: 0 4px 2px 0;
+      border-top: 2px solid var(--metric-color);
+    }
+
+    .chart-footnote .legend-reference { border-top-color: #768582; border-top-width: 1px; }
+
+    .no-profile {
+      min-height: 62vh;
+      display: grid;
+      place-items: center;
+      text-align: center;
+    }
+
+    .no-profile-inner { width: min(520px, 100%); }
+    .no-profile-mark { margin: 0 auto 22px; width: 76px; height: 76px; display: grid; place-items: center; color: var(--green); border: 2px solid var(--green); border-radius: 50%; font-size: 32px; }
+    .no-profile h1 { margin: 0; font-family: Georgia, serif; font-size: 48px; font-weight: 500; letter-spacing: -.04em; }
+    .no-profile p { color: var(--muted); line-height: 1.55; }
+
+    dialog {
+      width: min(1080px, calc(100% - 28px));
+      max-height: min(90vh, 850px);
+      margin: auto;
+      padding: 0;
+      color: var(--ink);
+      background: var(--paper);
+      border: 1px solid var(--line-dark);
+      border-radius: 10px;
+      box-shadow: 0 28px 90px rgba(16, 35, 32, .25);
+    }
+
+    dialog::backdrop { background: rgba(12,31,29,.5); backdrop-filter: blur(2px); }
+    body.modal-open { overflow: hidden; }
+
+    .dialog-head {
+      padding: 19px 22px 16px;
+      display: flex;
+      align-items: flex-start;
+      gap: 14px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .dialog-head h2 { margin: 0; font-size: 24px; letter-spacing: -.035em; }
+    .dialog-head p { margin: 5px 0 0; color: var(--muted); font-size: 12px; line-height: 1.45; }
+    .icon-button { min-width: 38px; min-height: 38px; margin-left: auto; padding: 5px; color: var(--muted); background: transparent; border-color: transparent; font-size: 22px; font-weight: 400; }
+    .icon-button:hover { color: var(--ink); background: #f0eee7; }
+
+    .dialog-body { max-height: calc(90vh - 150px); padding: 18px 22px; overflow: auto; }
+    .dialog-toolbar { margin-bottom: 13px; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+    .dialog-toolbar .hint { margin-left: auto; color: var(--muted); font-size: 11px; }
+
+    .entry-list { display: grid; gap: 7px; }
+
+    .entry-row {
+      display: grid;
+      grid-template-columns: 145px minmax(115px, .8fr) 105px minmax(180px, 1.6fr) 38px;
+      gap: 7px;
+      align-items: start;
+    }
+
+    .entry-row input, .entry-row select, .entry-row textarea { min-height: 42px; padding: 8px 9px; font-size: 13px; }
+    .entry-row textarea { height: 42px; min-height: 42px; }
+    .entry-labels { margin-bottom: 5px; color: var(--muted); font-size: 9px; font-weight: 800; letter-spacing: .07em; text-transform: uppercase; }
+    .entry-labels span:last-child { visibility: hidden; }
+    .remove-row { width: 38px; min-height: 42px; padding: 5px; color: var(--danger); background: transparent; border: 1px solid transparent; border-radius: 6px; font-size: 20px; }
+    .remove-row:hover { background: #fff1ef; border-color: #efd4d1; }
+
+    .dialog-error { min-height: 20px; margin: 12px 0 0; color: var(--danger); font-size: 12px; }
+
+    .dialog-actions {
+      padding: 13px 22px;
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      background: #f7f5ee;
+      border-top: 1px solid var(--line);
+    }
+
+    .dialog-actions .primary { margin-left: auto; }
+
+    .history-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+    .history-table th { padding: 8px; color: var(--muted); border-bottom: 1px solid var(--line-dark); font-size: 9px; letter-spacing: .07em; text-align: left; text-transform: uppercase; }
+    .history-table td { padding: 9px 8px; border-bottom: 1px solid var(--line); vertical-align: top; }
+    .history-table tbody tr[data-id] { cursor: pointer; }
+    .history-table tbody tr[data-id]:hover { background: var(--green-soft); }
+    .history-empty { padding: 42px; color: var(--muted); text-align: center; }
+
+    .toast-stack {
+      position: fixed;
+      z-index: 100;
+      right: 18px;
+      bottom: 18px;
+      width: min(370px, calc(100% - 36px));
+      display: grid;
+      gap: 8px;
+      pointer-events: none;
+    }
+
+    .toast {
+      padding: 12px 14px;
+      color: white;
+      background: #163d39;
+      border-left: 4px solid #75baa9;
+      border-radius: 6px;
+      box-shadow: var(--shadow);
+      font-size: 13px;
+      line-height: 1.4;
+      animation: toast-in .2s ease-out;
+    }
+
+    .toast.error { background: #6f2926; border-left-color: #ef9b8f; }
+    @keyframes toast-in { from { opacity: 0; transform: translateY(10px); } }
+
+    @media (max-width: 980px) {
+      .auth-view { grid-template-columns: 1fr; }
+      .auth-story { min-height: 48vh; padding: 38px; }
+      .auth-copy h1 { max-width: 680px; font-size: clamp(46px, 10vw, 78px); }
+      .auth-panel { min-height: 52vh; padding: 46px 28px; }
+      .charts-grid { grid-template-columns: 1fr; }
+      .chart-card { height: min(690px, 82vh); }
+      .site-header { flex-wrap: wrap; }
+      .site-header .brand span:last-child { display: none; }
+      .header-email { display: none; }
+      .profile-switcher { margin-left: 0; flex: 1; }
+      .profile-switcher select { width: 100%; }
+    }
+
+    @media (max-width: 700px) {
+      .site-header { gap: 8px; padding: 9px 12px; }
+      .header-actions .text-button span { display: none; }
+      .page-shell { width: min(100% - 22px, 1600px); }
+      .profile-hero { grid-template-columns: 1fr; padding-top: 29px; }
+      .hero-summary { width: 100%; min-width: 0; }
+      .measure-toolbar { gap: 7px; }
+      .add-measure { flex: 1 1 calc(50% - 7px); justify-content: center; font-size: 12px; }
+      .toolbar-spacer { display: none; }
+      .measure-toolbar > .secondary { flex: 1; }
+      .chart-card { height: 620px; }
+      .chart-table-wrap { width: 56%; max-height: 31%; right: 8px; bottom: 30px; }
+      .entry-row, .entry-labels { grid-template-columns: 1fr 1fr 85px 38px; }
+      .entry-row textarea { grid-column: 1 / 4; }
+      .entry-labels span:nth-child(4) { display: none; }
+      .inline-editor { grid-template-columns: 1fr auto; }
+      .inline-editor .field { grid-column: 1 / -1; }
+      .dialog-head, .dialog-body, .dialog-actions { padding-inline: 14px; }
+    }
+
+    @media (max-width: 470px) {
+      .auth-story { padding: 28px 22px; }
+      .auth-panel { padding: 38px 20px; }
+      .site-header .brand { display: none; }
+      .profile-hero h1 { font-size: 46px; }
+      .chart-card { height: 570px; }
+      .chart-table-wrap { width: 62%; }
+      .chart-table { font-size: 7.7px; }
+      .chart-table th, .chart-table td { padding: 3px; }
+      .chart-footnote { gap: 7px; font-size: 8px; }
+    }
+
+    @page { size: letter portrait; margin: .32in; }
+
+    @media print {
+      html, body { width: 100%; background: white !important; print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+      body { font-size: 9pt; }
+      .site-header, .profile-hero, .setup-banner, .measure-toolbar, .no-print, .toast-stack, dialog { display: none !important; }
+      .app-view { padding: 0; }
+      .page-shell { width: 100%; margin: 0; }
+      .charts-grid { display: block; }
+      .chart-card {
+        width: 100%;
+        height: 4.65in;
+        margin: 0 0 .18in;
+        break-inside: avoid;
+        page-break-inside: avoid;
+        border-color: #8c9793;
+        box-shadow: none;
+      }
+      .chart-card:nth-child(2) { break-after: page; page-break-after: always; }
+      .chart-head { min-height: .48in; padding: 8px 12px 6px; }
+      .chart-head .text-button { display: none; }
+      .chart-title h2 { font-size: 12pt; }
+      .chart-title p { font-size: 6.5pt; }
+      .chart-table-wrap { right: 10px; bottom: 24px; width: 43%; max-height: 34%; box-shadow: none; }
+      .chart-table { font-size: 5.4pt; }
+      .chart-table th { font-size: 4.7pt; }
+      .chart-table th, .chart-table td { padding: 2px 3px; }
+      .chart-footnote { min-height: 21px; padding: 4px 10px; font-size: 5.5pt; }
+      .chart-empty { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <main id="authView" class="auth-view">
+    <section class="auth-story" aria-labelledby="authHeadline">
+      <div class="brand"><span class="brand-mark" aria-hidden="true">↗</span><span>Measure the Baby</span></div>
+      <div class="auth-copy">
+        <p class="eyebrow">A private growth record</p>
+        <h1 id="authHeadline">Little changes,<br>clearly seen.</h1>
+        <p>Keep length, weight, head circumference, and BMI in one quiet place — ready to review or print whenever you need it.</p>
+      </div>
+      <p class="auth-foot">WHO growth references are a screening aid, not a diagnosis.<br>Your data stays in your own Docker volume.</p>
+    </section>
+    <section class="auth-panel">
+      <form id="authForm" class="auth-card">
+        <h2>Sign in</h2>
+        <p>Use your email and password. If the email is new, your account is created automatically.</p>
+        <div class="field">
+          <label for="email">Email</label>
+          <input id="email" name="email" type="email" autocomplete="email" required>
+        </div>
+        <div class="field">
+          <label for="password">Password</label>
+          <input id="password" name="password" type="password" autocomplete="current-password" minlength="8" maxlength="128" required>
+        </div>
+        <p id="authError" class="auth-error" role="alert"></p>
+        <button id="authSubmit" class="primary wide" type="submit">Continue</button>
+        <p class="auth-note">There is intentionally no password reset flow. Keep this app private and store your password somewhere safe.</p>
+      </form>
+    </section>
+  </main>
+
+  <main id="appView" class="app-view hidden">
+    <header class="site-header no-print">
+      <div class="brand"><span class="brand-mark" aria-hidden="true">↗</span><span>Measure the Baby</span></div>
+      <div class="profile-switcher">
+        <label for="profileSelect">Profile</label>
+        <select id="profileSelect" aria-label="Choose a profile"></select>
+        <button id="newProfileButton" class="secondary" type="button">+ New</button>
+      </div>
+      <span id="offlineBadge" class="offline-badge hidden">Offline</span>
+      <div class="header-actions">
+        <span id="headerEmail" class="header-email"></span>
+        <button id="installButton" class="text-button hidden" type="button"><span>Install app</span> ↓</button>
+        <button id="logoutButton" class="text-button" type="button"><span>Sign out</span> ↗</button>
+      </div>
+    </header>
+
+    <section id="noProfile" class="no-profile page-shell hidden">
+      <div class="no-profile-inner">
+        <div class="no-profile-mark" aria-hidden="true">+</div>
+        <h1>Add a profile</h1>
+        <p>Create a blank profile now. You can add the name, sex, and date of birth directly on the chart page afterward.</p>
+        <button id="firstProfileButton" class="primary" type="button">Create a profile</button>
+      </div>
+    </section>
+
+    <div id="profileContent" class="page-shell hidden">
+      <section class="profile-hero">
+        <div>
+          <p class="profile-label">Growth record</p>
+          <h1 id="profileName">No name added</h1>
+          <div class="profile-meta">
+            <button class="meta-button" type="button" data-edit-profile="name"><span class="meta-kind">Name</span><span id="nameMeta">No name added</span><span class="edit-hint">Edit</span></button>
+            <button class="meta-button" type="button" data-edit-profile="sex"><span class="meta-kind">Sex</span><span id="sexMeta">Not set</span><span class="edit-hint">Edit</span></button>
+            <button class="meta-button" type="button" data-edit-profile="dateOfBirth"><span class="meta-kind">Born</span><span id="dobMeta">Not set</span><span class="edit-hint">Edit</span></button>
+          </div>
+          <form id="inlineEditor" class="inline-editor hidden">
+            <div class="field">
+              <label id="inlineLabel" for="inlineInput">Edit field</label>
+              <div id="inlineControl"></div>
+            </div>
+            <button class="primary" type="submit">Save</button>
+            <button id="cancelInline" class="secondary" type="button">Cancel</button>
+          </form>
+        </div>
+        <div class="hero-summary" aria-label="Profile summary">
+          <div class="summary-cell"><span>Age today</span><strong id="ageToday">—</strong></div>
+          <div class="summary-cell"><span>Entries</span><strong id="entryCount">0</strong></div>
+        </div>
+      </section>
+
+      <aside id="setupBanner" class="setup-banner no-print hidden">
+        <span aria-hidden="true">○</span>
+        <span><strong>Finish the chart setup.</strong> Add sex and date of birth to show the matching percentile lines and calculate age.</span>
+        <button id="finishSetupButton" class="text-button" type="button">Add details</button>
+      </aside>
+
+      <nav class="measure-toolbar no-print" aria-label="Measurement actions">
+        <button class="add-measure" style="--metric-color:#20736a" data-add-metric="length" type="button"><span class="measure-dot"></span>Add length</button>
+        <button class="add-measure" style="--metric-color:#dc6c55" data-add-metric="weight" type="button"><span class="measure-dot"></span>Add weight</button>
+        <button class="add-measure" style="--metric-color:#347895" data-add-metric="head" type="button"><span class="measure-dot"></span>Add head</button>
+        <button class="add-measure" style="--metric-color:#bc8331" data-add-metric="bmi" type="button"><span class="measure-dot"></span>Add BMI</button>
+        <span class="toolbar-spacer"></span>
+        <button id="exportButton" class="secondary" type="button">Export CSV</button>
+        <button id="printButton" class="secondary" type="button">Print charts</button>
+      </nav>
+
+      <section id="chartsGrid" class="charts-grid" aria-label="Growth charts">
+        <article class="chart-card" style="--metric-color:#20736a" data-chart="length">
+          <header class="chart-head"><span class="chart-index">01</span><div class="chart-title"><h2>Length / height for age</h2><p>Recumbent length under 2 years; standing height afterward · centimetres</p></div><button class="text-button no-print" data-view-history="length" type="button">View all</button></header>
+          <div class="chart-stage"><canvas data-canvas="length" role="img" aria-label="Length or height for age growth chart"></canvas><p class="chart-empty hidden" data-empty="length"></p><div class="chart-table-wrap"><table class="chart-table"><thead><tr><th>Date</th><th>Age</th><th>Value</th><th>Comments</th></tr></thead><tbody data-table="length"></tbody></table></div></div>
+          <footer class="chart-footnote"><span><i class="legend-line"></i>Recorded</span><span><i class="legend-line legend-reference"></i>WHO 3rd, 15th, 50th, 85th, 97th</span></footer>
+        </article>
+        <article class="chart-card" style="--metric-color:#dc6c55" data-chart="weight">
+          <header class="chart-head"><span class="chart-index">02</span><div class="chart-title"><h2>Weight for age</h2><p>Measured weight · kilograms</p></div><button class="text-button no-print" data-view-history="weight" type="button">View all</button></header>
+          <div class="chart-stage"><canvas data-canvas="weight" role="img" aria-label="Weight for age growth chart"></canvas><p class="chart-empty hidden" data-empty="weight"></p><div class="chart-table-wrap"><table class="chart-table"><thead><tr><th>Date</th><th>Age</th><th>Value</th><th>Comments</th></tr></thead><tbody data-table="weight"></tbody></table></div></div>
+          <footer class="chart-footnote"><span><i class="legend-line"></i>Recorded</span><span><i class="legend-line legend-reference"></i>WHO 3rd, 15th, 50th, 85th, 97th</span></footer>
+        </article>
+        <article class="chart-card" style="--metric-color:#347895" data-chart="head">
+          <header class="chart-head"><span class="chart-index">03</span><div class="chart-title"><h2>Head circumference for age</h2><p>Maximum occipitofrontal circumference · centimetres</p></div><button class="text-button no-print" data-view-history="head" type="button">View all</button></header>
+          <div class="chart-stage"><canvas data-canvas="head" role="img" aria-label="Head circumference for age growth chart"></canvas><p class="chart-empty hidden" data-empty="head"></p><div class="chart-table-wrap"><table class="chart-table"><thead><tr><th>Date</th><th>Age</th><th>Value</th><th>Comments</th></tr></thead><tbody data-table="head"></tbody></table></div></div>
+          <footer class="chart-footnote"><span><i class="legend-line"></i>Recorded</span><span><i class="legend-line legend-reference"></i>WHO 3rd, 15th, 50th, 85th, 97th</span></footer>
+        </article>
+        <article class="chart-card" style="--metric-color:#bc8331" data-chart="bmi">
+          <header class="chart-head"><span class="chart-index">04</span><div class="chart-title"><h2>BMI for age</h2><p>kg/m² · calculated when length and weight share a date</p></div><button class="text-button no-print" data-view-history="bmi" type="button">View all</button></header>
+          <div class="chart-stage"><canvas data-canvas="bmi" role="img" aria-label="Body mass index for age growth chart"></canvas><p class="chart-empty hidden" data-empty="bmi"></p><div class="chart-table-wrap"><table class="chart-table"><thead><tr><th>Date</th><th>Age</th><th>Value</th><th>Comments</th></tr></thead><tbody data-table="bmi"></tbody></table></div></div>
+          <footer class="chart-footnote"><span><i class="legend-line"></i>Recorded / calculated</span><span><i class="legend-line legend-reference"></i>WHO 3rd, 15th, 50th, 85th, 97th</span></footer>
+        </article>
+      </section>
+    </div>
+  </main>
+
+  <dialog id="measurementDialog">
+    <form id="measurementForm">
+      <header class="dialog-head">
+        <div><h2 id="measurementTitle">Add measurement</h2><p id="measurementSubtitle">Add one row or many. Review everything before saving.</p></div>
+        <button class="icon-button" type="button" data-close-dialog="measurementDialog" aria-label="Close">×</button>
+      </header>
+      <div class="dialog-body">
+        <div id="addDialogToolbar" class="dialog-toolbar">
+          <button id="addRowButton" class="secondary" type="button">+ Add row</button>
+          <button id="importCsvButton" class="secondary" type="button">Import CSV</button>
+          <input id="csvInput" class="hidden" type="file" accept=".csv,text/csv">
+          <span class="hint">CSV columns: date, value, unit, comments</span>
+        </div>
+        <div class="entry-row entry-labels" aria-hidden="true"><span>Date</span><span id="valueColumnLabel">Value</span><span>Unit</span><span>Comments</span><span>Remove</span></div>
+        <div id="entryList" class="entry-list"></div>
+        <p id="measurementError" class="dialog-error" role="alert"></p>
+      </div>
+      <footer class="dialog-actions">
+        <button id="deleteMeasurementButton" class="danger-button hidden" type="button">Delete</button>
+        <button class="secondary" type="button" data-close-dialog="measurementDialog">Cancel</button>
+        <button id="saveMeasurementsButton" class="primary" type="submit">Save entries</button>
+      </footer>
+    </form>
+  </dialog>
+
+  <dialog id="historyDialog">
+    <header class="dialog-head">
+      <div><h2 id="historyTitle">Measurement history</h2><p>Choose a recorded row to edit it. Calculated BMI rows come from matching length and weight entries.</p></div>
+      <button class="icon-button" type="button" data-close-dialog="historyDialog" aria-label="Close">×</button>
+    </header>
+    <div class="dialog-body"><div id="historyContent"></div></div>
+    <footer class="dialog-actions"><button class="secondary" type="button" data-close-dialog="historyDialog">Close</button></footer>
+  </dialog>
+
+  <div id="toastStack" class="toast-stack" aria-live="polite"></div>
+
+  <script>
+    "use strict";
+
+    var METRICS = {
+      length: { label: "Length / height", addLabel: "length", canonicalUnit: "cm", units: ["cm", "in"], color: "#20736a", decimals: 1 },
+      weight: { label: "Weight", addLabel: "weight", canonicalUnit: "kg", units: ["kg", "lb"], color: "#dc6c55", decimals: 2 },
+      head: { label: "Head circumference", addLabel: "head circumference", canonicalUnit: "cm", units: ["cm", "in"], color: "#347895", decimals: 1 },
+      bmi: { label: "BMI", addLabel: "BMI", canonicalUnit: "kg/m2", units: ["kg/m2"], color: "#bc8331", decimals: 1 }
+    };
+
+    var state = {
+      user: null,
+      profiles: [],
+      profile: null,
+      measurements: [],
+      references: null,
+      editField: null,
+      dialogMetric: null,
+      editMeasurementId: null,
+      installPrompt: null,
+      drawFrame: null
+    };
+
+    var byId = function (id) { return document.getElementById(id); };
+    var defaultDocumentTitle = document.title;
+    var todayIso = function () { return new Date().toISOString().slice(0, 10); };
+    var escapeHtml = function (value) {
+      return String(value == null ? "" : value).replace(/[&<>"']/g, function (char) {
+        return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;" }[char];
+      });
+    };
+
+    async function apiFetch(path, options) {
+      var config = Object.assign({ headers: {} }, options || {});
+      if (config.body && typeof config.body !== "string") {
+        config.headers["Content-Type"] = "application/json";
+        config.body = JSON.stringify(config.body);
+      }
+      var response = await fetch(path, config);
+      var type = response.headers.get("content-type") || "";
+      var payload = type.indexOf("json") >= 0 ? await response.json() : await response.text();
+      if (!response.ok) {
+        var error = new Error(payload && payload.error ? payload.error : "Request failed.");
+        error.status = response.status;
+        error.code = payload && payload.code;
+        throw error;
+      }
+      return payload;
+    }
+
+    function toast(message, kind) {
+      var item = document.createElement("div");
+      item.className = "toast" + (kind === "error" ? " error" : "");
+      item.textContent = message;
+      byId("toastStack").appendChild(item);
+      setTimeout(function () { item.remove(); }, 4200);
+    }
+
+    function showAuth() {
+      byId("authView").classList.remove("hidden");
+      byId("appView").classList.add("hidden");
+      byId("password").value = "";
+      byId("email").focus();
+    }
+
+    function showApp() {
+      byId("authView").classList.add("hidden");
+      byId("appView").classList.remove("hidden");
+      byId("headerEmail").textContent = state.user.email;
+      renderProfileOptions();
+    }
+
+    function renderProfileOptions() {
+      var select = byId("profileSelect");
+      select.innerHTML = "";
+      if (!state.profiles.length) {
+        var empty = document.createElement("option");
+        empty.textContent = "No profiles yet";
+        empty.value = "";
+        select.appendChild(empty);
+        select.disabled = true;
+        byId("noProfile").classList.remove("hidden");
+        byId("profileContent").classList.add("hidden");
+        return;
+      }
+      select.disabled = false;
+      state.profiles.forEach(function (profile, index) {
+        var option = document.createElement("option");
+        option.value = String(profile.id);
+        option.textContent = profile.name || "Unnamed profile " + (index + 1);
+        option.selected = state.profile && profile.id === state.profile.id;
+        select.appendChild(option);
+      });
+      byId("noProfile").classList.add("hidden");
+      byId("profileContent").classList.remove("hidden");
+    }
+
+    async function selectProfile(id) {
+      if (!id) return;
+      try {
+        var result = await apiFetch("/api/profiles/" + id);
+        state.profile = result.profile;
+        state.measurements = result.measurements;
+        localStorage.setItem("growth:lastProfile", String(id));
+        renderProfileOptions();
+        renderProfile();
+      } catch (error) {
+        toast(error.message, "error");
+      }
+    }
+
+    async function createProfile() {
+      try {
+        var result = await apiFetch("/api/profiles", { method: "POST", body: {} });
+        state.profiles.push(result.profile);
+        state.profile = result.profile;
+        state.measurements = [];
+        showApp();
+        renderProfile();
+        toast("Blank profile created. Add details whenever you are ready.");
+      } catch (error) {
+        toast(error.message, "error");
+      }
+    }
+
+    function formatDate(dateValue, longStyle) {
+      if (!dateValue) return "Not set";
+      var date = new Date(dateValue + "T00:00:00Z");
+      return new Intl.DateTimeFormat(undefined, longStyle ? { year: "numeric", month: "long", day: "numeric", timeZone: "UTC" } : { year: "2-digit", month: "short", day: "numeric", timeZone: "UTC" }).format(date);
+    }
+
+    function daysBetween(start, end) {
+      var one = new Date(start + "T00:00:00Z");
+      var two = new Date(end + "T00:00:00Z");
+      return Math.round((two - one) / 86400000);
+    }
+
+    function ageMonths(dateValue) {
+      if (!state.profile || !state.profile.dateOfBirth || !dateValue) return null;
+      return daysBetween(state.profile.dateOfBirth, dateValue) / 30.4375;
+    }
+
+    function formatAge(dateValue, compact) {
+      if (!state.profile || !state.profile.dateOfBirth) return "—";
+      var days = daysBetween(state.profile.dateOfBirth, dateValue);
+      if (days < 0) return "—";
+      if (days < 28) return days + (compact ? "d" : " days");
+      var born = new Date(state.profile.dateOfBirth + "T00:00:00Z");
+      var measured = new Date(dateValue + "T00:00:00Z");
+      var months = (measured.getUTCFullYear() - born.getUTCFullYear()) * 12 + measured.getUTCMonth() - born.getUTCMonth();
+      if (measured.getUTCDate() < born.getUTCDate()) months--;
+      months = Math.max(0, months);
+      if (months < 12) return months + (compact ? "m" : " mo");
+      var years = Math.floor(months / 12);
+      var monthRemainder = months % 12;
+      return years + (compact ? "y" : " yr") + (monthRemainder ? " " + monthRemainder + (compact ? "m" : " mo") : "");
+    }
+
+    function renderProfile() {
+      if (!state.profile) return;
+      byId("profileName").textContent = state.profile.name || "No name added";
+      byId("nameMeta").textContent = state.profile.name || "No name added";
+      byId("sexMeta").textContent = state.profile.sex ? state.profile.sex.charAt(0).toUpperCase() + state.profile.sex.slice(1) : "Not set";
+      byId("dobMeta").textContent = state.profile.dateOfBirth ? formatDate(state.profile.dateOfBirth, true) : "Not set";
+      byId("ageToday").textContent = state.profile.dateOfBirth ? formatAge(todayIso(), true) : "—";
+      byId("entryCount").textContent = String(state.measurements.length);
+      byId("setupBanner").classList.toggle("hidden", Boolean(state.profile.sex && state.profile.dateOfBirth));
+      var profileIndex = state.profiles.findIndex(function (item) { return item.id === state.profile.id; });
+      if (profileIndex >= 0) state.profiles[profileIndex] = state.profile;
+      renderProfileOptions();
+      renderTables();
+      scheduleDraw();
+    }
+
+    function openInlineEditor(field) {
+      state.editField = field;
+      var control = byId("inlineControl");
+      var label = byId("inlineLabel");
+      control.innerHTML = "";
+      var input;
+      if (field === "name") {
+        label.textContent = "Name";
+        input = document.createElement("input");
+        input.type = "text";
+        input.maxLength = 80;
+        input.placeholder = "Baby's name";
+        input.value = state.profile.name || "";
+      } else if (field === "sex") {
+        label.textContent = "Sex used for reference curves";
+        input = document.createElement("select");
+        [["", "Not set"], ["male", "Male"], ["female", "Female"]].forEach(function (pair) {
+          var option = document.createElement("option");
+          option.value = pair[0];
+          option.textContent = pair[1];
+          option.selected = pair[0] === (state.profile.sex || "");
+          input.appendChild(option);
+        });
+      } else {
+        label.textContent = "Date of birth";
+        input = document.createElement("input");
+        input.type = "date";
+        input.max = todayIso();
+        input.value = state.profile.dateOfBirth || "";
+      }
+      input.id = "inlineInput";
+      input.name = field;
+      control.appendChild(input);
+      byId("inlineEditor").classList.remove("hidden");
+      input.focus();
+      if (input.select) input.select();
+    }
+
+    function closeInlineEditor() {
+      state.editField = null;
+      byId("inlineEditor").classList.add("hidden");
+    }
+
+    async function saveProfileField(event) {
+      event.preventDefault();
+      var input = byId("inlineInput");
+      if (!input || !state.editField) return;
+      var body = {
+        name: state.profile.name,
+        sex: state.profile.sex,
+        dateOfBirth: state.profile.dateOfBirth
+      };
+      body[state.editField] = input.value;
+      try {
+        var result = await apiFetch("/api/profiles/" + state.profile.id, { method: "PATCH", body: body });
+        state.profile = result.profile;
+        closeInlineEditor();
+        renderProfile();
+      } catch (error) {
+        toast(error.message, "error");
+        input.focus();
+      }
+    }
+
+    function displayNumber(row, metric) {
+      var config = METRICS[metric];
+      var value = row.valueMetric;
+      var unit = row.unitEntered || config.canonicalUnit;
+      if ((metric === "length" || metric === "head") && unit === "in") value = value / 2.54;
+      if (metric === "weight" && unit === "lb") value = value / 0.45359237;
+      var decimals = metric === "weight" ? 2 : config.decimals;
+      var label = unit === "kg/m2" ? "kg/m²" : unit;
+      return Number(value).toFixed(decimals).replace(/\.0+$|(\.\d*[1-9])0+$/, "$1") + " " + label;
+    }
+
+    function derivedBmiRows() {
+      var lengths = {};
+      var weights = {};
+      var manualDates = new Set();
+      state.measurements.forEach(function (row) {
+        if (row.type === "length") lengths[row.measuredOn] = row;
+        if (row.type === "weight") weights[row.measuredOn] = row;
+        if (row.type === "bmi") manualDates.add(row.measuredOn);
+      });
+      return Object.keys(lengths).filter(function (date) {
+        return weights[date] && !manualDates.has(date);
+      }).map(function (date) {
+        var metres = lengths[date].valueMetric / 100;
+        return {
+          id: "calculated-" + date,
+          type: "bmi",
+          measuredOn: date,
+          valueMetric: Math.round((weights[date].valueMetric / (metres * metres)) * 100) / 100,
+          unitEntered: "kg/m2",
+          comments: "Calculated from length + weight",
+          calculated: true
+        };
+      });
+    }
+
+    function metricRows(metric) {
+      var rows = state.measurements.filter(function (row) { return row.type === metric; });
+      if (metric === "bmi") rows = rows.concat(derivedBmiRows());
+      return rows.sort(function (a, b) {
+        return a.measuredOn.localeCompare(b.measuredOn) || String(a.id).localeCompare(String(b.id));
+      });
+    }
+
+    function tableRowHtml(row, metric) {
+      var comments = row.comments || "";
+      if (row.calculated) comments = '<span class="calculated-tag">Calculated</span>';
+      return '<tr ' + (row.calculated ? "" : 'data-id="' + row.id + '"') + ' data-metric="' + metric + '">' +
+        "<td>" + escapeHtml(formatDate(row.measuredOn, false)) + "</td>" +
+        "<td>" + escapeHtml(formatAge(row.measuredOn, true)) + "</td>" +
+        "<td>" + escapeHtml(displayNumber(row, metric)) + "</td>" +
+        '<td title="' + escapeHtml(row.comments || "") + '">' + comments + "</td></tr>";
+    }
+
+    function renderTables() {
+      Object.keys(METRICS).forEach(function (metric) {
+        var rows = metricRows(metric).slice().reverse();
+        var table = document.querySelector('[data-table="' + metric + '"]');
+        table.innerHTML = rows.length ? rows.map(function (row) { return tableRowHtml(row, metric); }).join("") :
+          '<tr><td colspan="4">No entries yet</td></tr>';
+      });
+    }
+
+    function niceStep(range, targetTicks) {
+      var rough = range / Math.max(2, targetTicks);
+      var power = Math.pow(10, Math.floor(Math.log10(rough || 1)));
+      var fraction = rough / power;
+      var nice = fraction <= 1 ? 1 : fraction <= 2 ? 2 : fraction <= 5 ? 5 : 10;
+      return nice * power;
+    }
+
+    function chartEndMonth(rows) {
+      if (!state.profile || !state.profile.dateOfBirth) return 2;
+      var dates = state.measurements.map(function (row) { return row.measuredOn; });
+      dates.push(todayIso());
+      var max = Math.max.apply(null, dates.map(function (date) { return ageMonths(date); }).filter(Number.isFinite));
+      return Math.max(2, max);
+    }
+
+    function referenceRows(metric, xMax) {
+      if (!state.references || !state.profile || !state.profile.sex) return [];
+      var rows = (((state.references.data || {})[state.profile.sex] || {})[metric] || []);
+      return rows.filter(function (row) { return row.month <= Math.min(xMax, 60.2); });
+    }
+
+    function smoothLine(context, points) {
+      if (!points.length) return;
+      context.beginPath();
+      context.moveTo(points[0].x, points[0].y);
+      if (points.length === 2) {
+        context.lineTo(points[1].x, points[1].y);
+      } else {
+        for (var i = 0; i < points.length - 1; i++) {
+          var previous = points[i - 1] || points[i];
+          var current = points[i];
+          var next = points[i + 1];
+          var after = points[i + 2] || next;
+          var tension = 0.72;
+          var cp1x = current.x + (next.x - previous.x) / 6 * tension;
+          var cp1y = current.y + (next.y - previous.y) / 6 * tension;
+          var cp2x = next.x - (after.x - current.x) / 6 * tension;
+          var cp2y = next.y - (after.y - current.y) / 6 * tension;
+          context.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, next.x, next.y);
+        }
+      }
+      context.stroke();
+    }
+
+    function drawChart(metric) {
+      var canvas = document.querySelector('[data-canvas="' + metric + '"]');
+      if (!canvas || !state.profile) return;
+      var stage = canvas.parentElement;
+      var rect = stage.getBoundingClientRect();
+      if (!rect.width || !rect.height) return;
+      var dpr = Math.min(window.devicePixelRatio || 1, 2.5);
+      canvas.width = Math.round(rect.width * dpr);
+      canvas.height = Math.round(rect.height * dpr);
+      var ctx = canvas.getContext("2d");
+      ctx.scale(dpr, dpr);
+      ctx.clearRect(0, 0, rect.width, rect.height);
+
+      var recorded = metricRows(metric).filter(function (row) {
+        return state.profile.dateOfBirth && Number.isFinite(ageMonths(row.measuredOn)) && ageMonths(row.measuredOn) >= 0;
+      });
+      var xMax = chartEndMonth(recorded);
+      var refs = referenceRows(metric, xMax);
+      var values = recorded.map(function (row) { return row.valueMetric; });
+      refs.forEach(function (row) {
+        [3, 15, 50, 85, 97].forEach(function (p) { if (Number.isFinite(row["p" + p])) values.push(row["p" + p]); });
+      });
+      var empty = document.querySelector('[data-empty="' + metric + '"]');
+      if (!state.profile.dateOfBirth) {
+        empty.textContent = "Add a date of birth to place entries on the age axis.";
+        empty.classList.remove("hidden");
+      } else if (!recorded.length) {
+        empty.textContent = "No " + METRICS[metric].addLabel.toLowerCase() + " entries yet. Use the button above to add the first one.";
+        empty.classList.remove("hidden");
+      } else {
+        empty.classList.add("hidden");
+      }
+
+      if (!values.length) {
+        values = metric === "weight" ? [2, 14] : metric === "bmi" ? [10, 22] : metric === "head" ? [30, 52] : [45, 100];
+      }
+      var minValue = Math.min.apply(null, values);
+      var maxValue = Math.max.apply(null, values);
+      var padding = Math.max((maxValue - minValue) * .09, metric === "weight" ? .6 : 1);
+      var yMin = Math.max(0, minValue - padding);
+      var yMax = maxValue + padding;
+      var yStep = niceStep(yMax - yMin, 7);
+      yMin = Math.floor(yMin / yStep) * yStep;
+      yMax = Math.ceil(yMax / yStep) * yStep;
+
+      var margin = { left: rect.width < 480 ? 43 : 50, right: 20, top: 19, bottom: 42 };
+      var width = rect.width - margin.left - margin.right;
+      var height = rect.height - margin.top - margin.bottom;
+      var x = function (month) { return margin.left + (month / xMax) * width; };
+      var y = function (value) { return margin.top + height - ((value - yMin) / (yMax - yMin)) * height; };
+
+      ctx.save();
+      ctx.lineWidth = 1;
+      ctx.font = "9px Inter, system-ui, sans-serif";
+      ctx.fillStyle = "#667674";
+      ctx.strokeStyle = "#d9ddd7";
+      ctx.textAlign = "right";
+      ctx.textBaseline = "middle";
+      for (var yTick = yMin; yTick <= yMax + yStep * .1; yTick += yStep) {
+        var py = y(yTick);
+        ctx.beginPath();
+        ctx.moveTo(margin.left, py);
+        ctx.lineTo(rect.width - margin.right, py);
+        ctx.stroke();
+        ctx.fillText(Number(yTick.toFixed(2)).toString(), margin.left - 7, py);
+      }
+
+      var xStep = xMax <= 6 ? 1 : xMax <= 24 ? 3 : xMax <= 60 ? 6 : xMax <= 120 ? 12 : niceStep(xMax, 8);
+      ctx.textAlign = "center";
+      ctx.textBaseline = "top";
+      for (var xTick = 0; xTick <= xMax + xStep * .1; xTick += xStep) {
+        var px = x(xTick);
+        ctx.strokeStyle = xTick === 0 ? "#aab4b0" : "#e0e2dd";
+        ctx.beginPath();
+        ctx.moveTo(px, margin.top);
+        ctx.lineTo(px, margin.top + height);
+        ctx.stroke();
+        var xLabel = xTick >= 24 && xTick % 12 === 0 ? (xTick / 12) + "y" : Math.round(xTick) + "m";
+        if (xTick === 0) xLabel = "Birth";
+        ctx.fillStyle = "#667674";
+        ctx.fillText(xLabel, px, margin.top + height + 8);
+      }
+      ctx.font = "10px Inter, system-ui, sans-serif";
+      ctx.fillStyle = "#667674";
+      ctx.fillText("Age", margin.left + width / 2, rect.height - 14);
+
+      ctx.save();
+      ctx.translate(13, margin.top + height / 2);
+      ctx.rotate(-Math.PI / 2);
+      ctx.fillText(METRICS[metric].canonicalUnit === "kg/m2" ? "kg/m²" : METRICS[metric].canonicalUnit, 0, 0);
+      ctx.restore();
+
+      if (refs.length) {
+        [3, 15, 50, 85, 97].forEach(function (percentile) {
+          var points = refs.map(function (row) { return { x: x(row.month), y: y(row["p" + percentile]) }; });
+          ctx.save();
+          ctx.strokeStyle = percentile === 50 ? "#596a67" : "#899693";
+          ctx.lineWidth = percentile === 50 ? 1.5 : .85;
+          ctx.setLineDash(percentile === 50 ? [] : [3, 2]);
+          smoothLine(ctx, points);
+          ctx.restore();
+          if (points.length) {
+            var last = points[points.length - 1];
+            ctx.save();
+            ctx.font = "8px Inter, system-ui, sans-serif";
+            ctx.fillStyle = "#596a67";
+            ctx.textAlign = "right";
+            ctx.textBaseline = "bottom";
+            ctx.fillText(String(percentile), Math.min(last.x - 3, rect.width - margin.right - 2), last.y - 2);
+            ctx.restore();
+          }
+        });
+      }
+
+      if (recorded.length) {
+        var userPoints = recorded.map(function (row) { return { x: x(ageMonths(row.measuredOn)), y: y(row.valueMetric), row: row }; });
+        ctx.save();
+        ctx.strokeStyle = METRICS[metric].color;
+        ctx.lineWidth = 2.3;
+        ctx.lineCap = "round";
+        ctx.lineJoin = "round";
+        smoothLine(ctx, userPoints);
+        userPoints.forEach(function (point) {
+          ctx.beginPath();
+          ctx.fillStyle = "#fffef9";
+          ctx.strokeStyle = METRICS[metric].color;
+          ctx.lineWidth = 2;
+          ctx.arc(point.x, point.y, 4.2, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.stroke();
+          ctx.beginPath();
+          ctx.fillStyle = METRICS[metric].color;
+          ctx.arc(point.x, point.y, 1.45, 0, Math.PI * 2);
+          ctx.fill();
+        });
+        ctx.restore();
+      }
+      ctx.restore();
+    }
+
+    function drawAllCharts() {
+      if (!state.profile) return;
+      Object.keys(METRICS).forEach(drawChart);
+    }
+
+    function setPrintDocumentTitle() {
+      if (!state.profile) {
+        document.title = defaultDocumentTitle;
+        return;
+      }
+      var name = state.profile.name || "No name added";
+      var age = state.profile.dateOfBirth ? formatAge(todayIso(), true) : "Age not set";
+      var sex = state.profile.sex ? state.profile.sex.charAt(0).toUpperCase() + state.profile.sex.slice(1) : "Sex not set";
+      var dob = state.profile.dateOfBirth ? new Intl.DateTimeFormat(undefined, {
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+        timeZone: "UTC"
+      }).format(new Date(state.profile.dateOfBirth + "T00:00:00Z")) : "DOB not set";
+      document.title = "Measure the Baby | " + name + " | Age " + age + " | " + sex + " | DOB " + dob;
+    }
+
+    function preparePrint() {
+      setPrintDocumentTitle();
+      drawAllCharts();
+    }
+
+    function finishPrint() {
+      document.title = defaultDocumentTitle;
+    }
+
+    function scheduleDraw() {
+      if (state.drawFrame) cancelAnimationFrame(state.drawFrame);
+      state.drawFrame = requestAnimationFrame(function () {
+        state.drawFrame = null;
+        drawAllCharts();
+      });
+    }
+
+    function lastMeasurement(metric) {
+      var rows = state.measurements.filter(function (row) { return row.type === metric; });
+      return rows.length ? rows[rows.length - 1] : null;
+    }
+
+    function valueForEntry(row, metric) {
+      if (!row) return "";
+      var value = row.valueMetric;
+      if ((metric === "length" || metric === "head") && row.unitEntered === "in") value /= 2.54;
+      if (metric === "weight" && row.unitEntered === "lb") value /= 0.45359237;
+      return Number(value).toFixed(METRICS[metric].decimals).replace(/\.0+$|(\.\d*[1-9])0+$/, "$1");
+    }
+
+    function entryRowElement(values) {
+      var metric = state.dialogMetric;
+      var config = METRICS[metric];
+      var row = document.createElement("div");
+      row.className = "entry-row";
+      var units = config.units.map(function (unit) {
+        var label = unit === "kg/m2" ? "kg/m²" : unit;
+        return '<option value="' + unit + '"' + (unit === values.unit ? " selected" : "") + ">" + label + "</option>";
+      }).join("");
+      row.innerHTML =
+        '<input class="entry-date" type="date" max="' + todayIso() + '" value="' + escapeHtml(values.measuredOn || todayIso()) + '" aria-label="Measurement date" required>' +
+        '<input class="entry-value" type="number" inputmode="decimal" min="0.01" step="any" value="' + escapeHtml(values.value == null ? "" : values.value) + '" aria-label="Measurement value" required>' +
+        '<select class="entry-unit" aria-label="Unit">' + units + "</select>" +
+        '<textarea class="entry-comments" maxlength="500" rows="1" placeholder="Optional comment" aria-label="Comments">' + escapeHtml(values.comments || "") + "</textarea>" +
+        '<button class="remove-row" type="button" aria-label="Remove row">×</button>';
+      row.querySelector(".remove-row").addEventListener("click", function () {
+        if (byId("entryList").children.length > 1) row.remove();
+        else {
+          row.querySelector(".entry-value").value = "";
+          row.querySelector(".entry-comments").value = "";
+        }
+      });
+      return row;
+    }
+
+    function openMeasurementDialog(metric, editId) {
+      state.dialogMetric = metric;
+      state.editMeasurementId = editId || null;
+      var config = METRICS[metric];
+      var dialog = byId("measurementDialog");
+      byId("measurementError").textContent = "";
+      byId("entryList").innerHTML = "";
+      byId("valueColumnLabel").textContent = config.label;
+      byId("deleteMeasurementButton").classList.toggle("hidden", !editId);
+      byId("addDialogToolbar").classList.toggle("hidden", Boolean(editId));
+      byId("saveMeasurementsButton").textContent = editId ? "Save changes" : "Save entries";
+      if (editId) {
+        var existing = state.measurements.find(function (row) { return row.id === Number(editId); });
+        if (!existing) return;
+        byId("measurementTitle").textContent = "Edit " + config.addLabel;
+        byId("measurementSubtitle").textContent = "Update this recorded value or delete it.";
+        byId("entryList").appendChild(entryRowElement({
+          measuredOn: existing.measuredOn,
+          value: valueForEntry(existing, metric),
+          unit: existing.unitEntered,
+          comments: existing.comments
+        }));
+      } else {
+        var last = lastMeasurement(metric);
+        byId("measurementTitle").textContent = "Add " + config.addLabel;
+        byId("measurementSubtitle").textContent = metric === "bmi" ?
+          "BMI is also calculated automatically when length and weight share a date." :
+          "Add one row or many. New rows repeat the last value and unit to speed up entry.";
+        byId("entryList").appendChild(entryRowElement({
+          measuredOn: todayIso(),
+          value: valueForEntry(last, metric),
+          unit: last ? last.unitEntered : config.canonicalUnit,
+          comments: ""
+        }));
+      }
+      dialog.showModal();
+      document.body.classList.add("modal-open");
+      setTimeout(function () { dialog.querySelector(".entry-value").focus(); }, 50);
+    }
+
+    function closeDialog(id) {
+      var dialog = byId(id);
+      if (dialog.open) dialog.close();
+      document.body.classList.remove("modal-open");
+    }
+
+    function addEntryRow() {
+      var list = byId("entryList");
+      var previous = list.lastElementChild;
+      var date = previous ? previous.querySelector(".entry-date").value : todayIso();
+      var nextDate = new Date((date || todayIso()) + "T00:00:00Z");
+      nextDate.setUTCDate(nextDate.getUTCDate() + 1);
+      var nextIso = nextDate.toISOString().slice(0, 10);
+      if (nextIso > todayIso()) nextIso = todayIso();
+      var row = entryRowElement({
+        measuredOn: nextIso,
+        value: previous ? previous.querySelector(".entry-value").value : "",
+        unit: previous ? previous.querySelector(".entry-unit").value : METRICS[state.dialogMetric].canonicalUnit,
+        comments: ""
+      });
+      list.appendChild(row);
+      row.querySelector(".entry-date").focus();
+    }
+
+    function collectEntryRows() {
+      return Array.from(byId("entryList").children).map(function (row) {
+        return {
+          measuredOn: row.querySelector(".entry-date").value,
+          value: row.querySelector(".entry-value").value,
+          unit: row.querySelector(".entry-unit").value,
+          comments: row.querySelector(".entry-comments").value
+        };
+      });
+    }
+
+    async function saveMeasurements(event) {
+      event.preventDefault();
+      var rows = collectEntryRows();
+      var errorBox = byId("measurementError");
+      errorBox.textContent = "";
+      if (rows.some(function (row) { return !row.measuredOn || !row.value || Number(row.value) <= 0; })) {
+        errorBox.textContent = "Every row needs a date and positive value.";
+        return;
+      }
+      var button = byId("saveMeasurementsButton");
+      button.disabled = true;
+      try {
+        var result;
+        if (state.editMeasurementId) {
+          result = await apiFetch("/api/measurements/" + state.editMeasurementId, { method: "PATCH", body: rows[0] });
+        } else {
+          result = await apiFetch("/api/profiles/" + state.profile.id + "/measurements", {
+            method: "POST",
+            body: { type: state.dialogMetric, rows: rows }
+          });
+        }
+        state.measurements = result.measurements;
+        closeDialog("measurementDialog");
+        renderProfile();
+        toast(state.editMeasurementId ? "Measurement updated." : rows.length + (rows.length === 1 ? " entry saved." : " entries saved."));
+      } catch (error) {
+        errorBox.textContent = error.message;
+      } finally {
+        button.disabled = false;
+      }
+    }
+
+    async function deleteMeasurement() {
+      if (!state.editMeasurementId) return;
+      if (!confirm("Delete this measurement? This cannot be undone.")) return;
+      try {
+        var result = await apiFetch("/api/measurements/" + state.editMeasurementId, { method: "DELETE" });
+        state.measurements = result.measurements;
+        closeDialog("measurementDialog");
+        renderProfile();
+        toast("Measurement deleted.");
+      } catch (error) {
+        byId("measurementError").textContent = error.message;
+      }
+    }
+
+    function parseCsv(text) {
+      var rows = [];
+      var row = [];
+      var field = "";
+      var quoted = false;
+      for (var i = 0; i < text.length; i++) {
+        var char = text[i];
+        if (quoted) {
+          if (char === '"' && text[i + 1] === '"') { field += '"'; i++; }
+          else if (char === '"') quoted = false;
+          else field += char;
+        } else if (char === '"') quoted = true;
+        else if (char === ",") { row.push(field); field = ""; }
+        else if (char === "\n") { row.push(field.replace(/\r$/, "")); rows.push(row); row = []; field = ""; }
+        else field += char;
+      }
+      if (field || row.length) { row.push(field.replace(/\r$/, "")); rows.push(row); }
+      if (!rows.length) return [];
+      var headers = rows.shift().map(function (value) { return value.trim().toLowerCase().replace(/[^a-z0-9]/g, ""); });
+      var aliases = {
+        type: ["type", "metric", "measurementtype"],
+        date: ["date", "measuredon", "measurementdate"],
+        value: ["value", "measurement", "valuemetric", state.dialogMetric],
+        unit: ["unit", "units", "unitentered"],
+        comments: ["comments", "comment", "notes", "note"]
+      };
+      function indexFor(name) {
+        var candidates = aliases[name];
+        return headers.findIndex(function (header) { return candidates.indexOf(header) >= 0; });
+      }
+      var indexes = { type: indexFor("type"), date: indexFor("date"), value: indexFor("value"), unit: indexFor("unit"), comments: indexFor("comments") };
+      if (indexes.date < 0 || indexes.value < 0) throw new Error("CSV needs at least date and value columns.");
+      var fallbackUnit = METRICS[state.dialogMetric].canonicalUnit;
+      return rows.filter(function (parts) {
+        if (!parts.some(function (part) { return part.trim(); })) return false;
+        return indexes.type < 0 || !parts[indexes.type] || parts[indexes.type].trim().toLowerCase() === state.dialogMetric;
+      }).map(function (parts) {
+        var unit = indexes.unit >= 0 ? parts[indexes.unit].trim().toLowerCase().replace("kg/m²", "kg/m2") : fallbackUnit;
+        if (METRICS[state.dialogMetric].units.indexOf(unit) < 0) unit = fallbackUnit;
+        return {
+          measuredOn: parts[indexes.date].trim(),
+          value: parts[indexes.value].trim(),
+          unit: unit,
+          comments: indexes.comments >= 0 ? parts[indexes.comments].trim() : ""
+        };
+      });
+    }
+
+    async function importCsvFile(event) {
+      var file = event.target.files && event.target.files[0];
+      event.target.value = "";
+      if (!file) return;
+      try {
+        var rows = parseCsv(await file.text());
+        if (!rows.length) throw new Error("No data rows were found in that CSV.");
+        var list = byId("entryList");
+        var onlyBlank = list.children.length === 1 && !list.firstElementChild.querySelector(".entry-value").value;
+        if (onlyBlank) list.innerHTML = "";
+        rows.slice(0, 250).forEach(function (row) { list.appendChild(entryRowElement(row)); });
+        toast(rows.length + (rows.length === 1 ? " CSV row added for review." : " CSV rows added for review."));
+      } catch (error) {
+        byId("measurementError").textContent = error.message;
+      }
+    }
+
+    function openHistory(metric) {
+      var config = METRICS[metric];
+      var rows = metricRows(metric).slice().reverse();
+      byId("historyTitle").textContent = config.label + " history";
+      if (!rows.length) {
+        byId("historyContent").innerHTML = '<p class="history-empty">No entries yet.</p>';
+      } else {
+        byId("historyContent").innerHTML = '<table class="history-table"><thead><tr><th>Date</th><th>Age</th><th>Value</th><th>Comments</th><th></th></tr></thead><tbody>' +
+          rows.map(function (row) {
+            return '<tr ' + (row.calculated ? "" : 'data-id="' + row.id + '"') + ' data-metric="' + metric + '"><td>' + escapeHtml(formatDate(row.measuredOn, true)) +
+              "</td><td>" + escapeHtml(formatAge(row.measuredOn, false)) + "</td><td>" + escapeHtml(displayNumber(row, metric)) +
+              "</td><td>" + escapeHtml(row.comments || "") + "</td><td>" + (row.calculated ? '<span class="calculated-tag">Auto</span>' : "Edit →") + "</td></tr>";
+          }).join("") + "</tbody></table>";
+      }
+      byId("historyDialog").showModal();
+      document.body.classList.add("modal-open");
+    }
+
+    async function deleteProfile() {
+      if (!state.profile) return;
+      var label = state.profile.name || "this unnamed profile";
+      if (!confirm("Delete " + label + " and all of its measurements? This cannot be undone.")) return;
+      try {
+        await apiFetch("/api/profiles/" + state.profile.id, { method: "DELETE" });
+        state.profiles = state.profiles.filter(function (profile) { return profile.id !== state.profile.id; });
+        state.profile = null;
+        state.measurements = [];
+        if (state.profiles.length) await selectProfile(state.profiles[0].id);
+        else showApp();
+        toast("Profile deleted.");
+      } catch (error) {
+        toast(error.message, "error");
+      }
+    }
+
+    async function signOut() {
+      try { await apiFetch("/api/logout", { method: "POST" }); } catch (_) {}
+      state.user = null;
+      state.profiles = [];
+      state.profile = null;
+      state.measurements = [];
+      showAuth();
+    }
+
+    async function initialize() {
+      try {
+        var results = await Promise.all([
+          apiFetch("/api/session"),
+          fetch("/growth-data.json").then(function (response) {
+            if (!response.ok) throw new Error("Growth references could not be loaded.");
+            return response.json();
+          })
+        ]);
+        var session = results[0];
+        state.references = results[1];
+        if (!session.user) return showAuth();
+        state.user = session.user;
+        state.profiles = session.profiles;
+        showApp();
+        if (state.profiles.length) {
+          var last = Number(localStorage.getItem("growth:lastProfile"));
+          var selected = state.profiles.find(function (profile) { return profile.id === last; }) || state.profiles[0];
+          await selectProfile(selected.id);
+        }
+      } catch (error) {
+        byId("authError").textContent = error.message;
+        showAuth();
+      }
+    }
+
+    byId("authForm").addEventListener("submit", async function (event) {
+      event.preventDefault();
+      var button = byId("authSubmit");
+      var errorBox = byId("authError");
+      errorBox.textContent = "";
+      button.disabled = true;
+      button.textContent = "Checking…";
+      try {
+        var result = await apiFetch("/api/auth", {
+          method: "POST",
+          body: { email: byId("email").value, password: byId("password").value }
+        });
+        state.user = result.user;
+        state.profiles = result.profiles;
+        state.profile = null;
+        state.measurements = [];
+        showApp();
+        if (state.profiles.length) await selectProfile(state.profiles[0].id);
+        else renderProfileOptions();
+        if (result.created) toast("Account created. You can add your first profile now.");
+      } catch (error) {
+        errorBox.textContent = error.message;
+      } finally {
+        button.disabled = false;
+        button.textContent = "Continue";
+      }
+    });
+
+    byId("newProfileButton").addEventListener("click", createProfile);
+    byId("firstProfileButton").addEventListener("click", createProfile);
+    byId("logoutButton").addEventListener("click", signOut);
+    byId("profileSelect").addEventListener("change", function (event) { selectProfile(Number(event.target.value)); });
+    byId("inlineEditor").addEventListener("submit", saveProfileField);
+    byId("cancelInline").addEventListener("click", closeInlineEditor);
+    byId("finishSetupButton").addEventListener("click", function () {
+      openInlineEditor(state.profile.sex ? "dateOfBirth" : "sex");
+      byId("inlineEditor").scrollIntoView({ behavior: "smooth", block: "center" });
+    });
+    document.querySelectorAll("[data-edit-profile]").forEach(function (button) {
+      button.addEventListener("click", function () { openInlineEditor(button.dataset.editProfile); });
+    });
+    document.querySelectorAll("[data-add-metric]").forEach(function (button) {
+      button.addEventListener("click", function () { openMeasurementDialog(button.dataset.addMetric); });
+    });
+    document.querySelectorAll("[data-view-history]").forEach(function (button) {
+      button.addEventListener("click", function () { openHistory(button.dataset.viewHistory); });
+    });
+    document.querySelectorAll("[data-close-dialog]").forEach(function (button) {
+      button.addEventListener("click", function () { closeDialog(button.dataset.closeDialog); });
+    });
+    document.querySelectorAll("dialog").forEach(function (dialog) {
+      dialog.addEventListener("close", function () { document.body.classList.remove("modal-open"); });
+      dialog.addEventListener("click", function (event) {
+        if (event.target === dialog) closeDialog(dialog.id);
+      });
+    });
+    byId("addRowButton").addEventListener("click", addEntryRow);
+    byId("importCsvButton").addEventListener("click", function () { byId("csvInput").click(); });
+    byId("csvInput").addEventListener("change", importCsvFile);
+    byId("measurementForm").addEventListener("submit", saveMeasurements);
+    byId("deleteMeasurementButton").addEventListener("click", deleteMeasurement);
+    byId("printButton").addEventListener("click", function () { preparePrint(); setTimeout(function () { window.print(); }, 60); });
+    byId("exportButton").addEventListener("click", function () {
+      if (state.profile) window.location.href = "/api/profiles/" + state.profile.id + "/export.csv";
+    });
+
+    document.addEventListener("click", function (event) {
+      var row = event.target.closest("tr[data-id][data-metric]");
+      if (!row) return;
+      if (byId("historyDialog").open) closeDialog("historyDialog");
+      openMeasurementDialog(row.dataset.metric, Number(row.dataset.id));
+    });
+
+    window.addEventListener("resize", scheduleDraw);
+    window.addEventListener("beforeprint", preparePrint);
+    window.addEventListener("afterprint", finishPrint);
+    window.addEventListener("online", function () { byId("offlineBadge").classList.add("hidden"); });
+    window.addEventListener("offline", function () { byId("offlineBadge").classList.remove("hidden"); });
+    byId("offlineBadge").classList.toggle("hidden", navigator.onLine);
+
+    window.addEventListener("beforeinstallprompt", function (event) {
+      event.preventDefault();
+      state.installPrompt = event;
+      byId("installButton").classList.remove("hidden");
+    });
+    byId("installButton").addEventListener("click", async function () {
+      if (!state.installPrompt) return;
+      state.installPrompt.prompt();
+      await state.installPrompt.userChoice;
+      state.installPrompt = null;
+      byId("installButton").classList.add("hidden");
+    });
+    window.addEventListener("appinstalled", function () { byId("installButton").classList.add("hidden"); });
+
+    if ("serviceWorker" in navigator) {
+      window.addEventListener("load", function () {
+        navigator.serviceWorker.register("/sw.js").catch(function () {});
+      });
+    }
+
+    initialize();
+  </script>
+</body>
+</html>
