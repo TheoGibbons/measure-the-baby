@@ -27,7 +27,7 @@ cd ~/projects/hobby-traefik
 Then start this application:
 
 ```bash
-cd ~/projects/measure-the-baby
+cd ~/measure-the-baby
 cp .env.traefik.example .env
 ./scripts/up-local.sh
 ```
@@ -43,8 +43,8 @@ Deploy the central `hobby-traefik` repository first. Then clone this repository
 at the path expected by its deployment workflow and set the public hostname:
 
 ```bash
-git clone git@github.com:TheoGibbons/measure-the-baby.git ~/projects/measure-the-baby
-cd ~/projects/measure-the-baby
+git clone git@github.com:TheoGibbons/measure-the-baby.git ~/measure-the-baby
+cd ~/measure-the-baby
 cp .env.production.example .env
 nano .env
 chmod +x scripts/deploy.sh
