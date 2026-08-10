@@ -1026,7 +1026,11 @@
     function formatDate(dateValue, longStyle) {
       if (!dateValue) return "Not set";
       var date = new Date(dateValue + "T00:00:00Z");
-      return new Intl.DateTimeFormat(undefined, longStyle ? { year: "numeric", month: "long", day: "numeric", timeZone: "UTC" } : { year: "2-digit", month: "short", day: "numeric", timeZone: "UTC" }).format(date);
+      if (!longStyle) {
+        var month = new Intl.DateTimeFormat("en", { month: "short", timeZone: "UTC" }).format(date);
+        return date.getUTCFullYear() + " " + month + " " + date.getUTCDate();
+      }
+      return new Intl.DateTimeFormat(undefined, { year: "numeric", month: "long", day: "numeric", timeZone: "UTC" }).format(date);
     }
 
     function daysBetween(start, end) {

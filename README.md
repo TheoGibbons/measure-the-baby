@@ -47,6 +47,7 @@ git clone git@github.com:TheoGibbons/measure-the-baby.git ~/projects/measure-the
 cd ~/projects/measure-the-baby
 cp .env.production.example .env
 nano .env
+chmod +x scripts/deploy.sh
 ./scripts/deploy.sh
 ```
 
