@@ -1,0 +1,7 @@
+# Automatically loaded by plain `docker compose` commands. This is the portable
+# standalone experience for users who do not run the shared Traefik stack.
+
+services:
+  app:
+    ports:
+      - '${APP_BIND:-127.0.0.1}:${APP_PORT:-3081}:3000'

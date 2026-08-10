@@ -2,50 +2,75 @@
 
 A small, private baby growth-chart app. It runs as one Docker container, stores its data in a persistent SQLite volume, and serves a framework-free single-page frontend.
 
-## Start it
+## Start with Docker
 
-Copy the example settings if you do not already have a `.env` file:
+Traefik is optional. A normal clone runs as a standalone application:
 
-    cp .env.example .env
+```bash
+docker compose up -d --build
+```
 
-The example settings run the app locally without Traefik. `APP_PORT` is the host-side port, so it can be changed without changing the app's internal port 3000:
+Open <http://localhost:3081>. Plain Docker Compose automatically merges
+`docker-compose.override.yml`, which publishes the app on loopback. To change
+the bind address or port, copy `.env.example` to `.env` and edit `APP_BIND` or
+`APP_PORT`.
 
-    docker compose up -d --build
+## Develop through the shared Traefik proxy
 
-Open http://localhost:3081, replacing `3081` if you selected a different `APP_PORT` in `.env`.
+The shared Traefik stack must be running first. From its repository:
 
-### EC2 with Traefik
+```bash
+cd ~/projects/hobby-traefik
+./scripts/up-local.sh
+```
 
-On EC2, change these `.env` settings:
+Then start this application:
 
-    APP_HOST=baby.example.com
-    APP_PORT=3081
-    COOKIE_SECURE=true
-    TRAEFIK_ENABLED=true
-    TRAEFIK_NETWORK=traefik
-    TRAEFIK_NETWORK_EXTERNAL=true
-    TRAEFIK_ENTRYPOINT=websecure
-    TRAEFIK_CERT_RESOLVER=letsencrypt
+```bash
+cd ~/projects/measure-the-baby
+cp .env.traefik.example .env
+./scripts/up-local.sh
+```
 
-Replace the hostname, host port, network, entrypoint, and certificate resolver with the values used on that host. The published host port is bound to `127.0.0.1`; public traffic still reaches the container through Traefik.
+Open <http://baby.localhost:8085>. The local script explicitly combines the
+proxy-agnostic core with `docker-compose.traefik.yml`, so it does not load the
+standalone port override. Traffic follows the same Traefik-to-container path
+used on EC2.
 
-If the shared network does not exist yet, create it once and attach the Traefik service to it as well:
+### Deploy on EC2
 
-    docker network create traefik
+Deploy the central `hobby-traefik` repository first. Then clone this repository
+at the path expected by its deployment workflow and set the public hostname:
 
-Then start the application:
+```bash
+git clone git@github.com:TheoGibbons/measure-the-baby.git ~/projects/measure-the-baby
+cd ~/projects/measure-the-baby
+cp .env.production.example .env
+nano .env
+./scripts/deploy.sh
+```
 
-    docker compose up -d --build
+The script pulls with `--ff-only`, combines the core, Traefik, and production
+overlays, rebuilds, and waits for the health check. Production forces secure
+cookies and adds TLS through the shared `letsencrypt` resolver.
 
-Open the HTTPS hostname configured as `APP_HOST`. Traefik reaches port 3000 over the shared Docker network.
+Open the HTTPS hostname configured as `APP_HOST`.
+
+### Push-to-deploy
+
+`.github/workflows/deploy.yml` invokes the same script after a push to `main`.
+Create a GitHub environment named `production` and configure `EC2_HOST`,
+`EC2_USER`, `EC2_SSH_PRIVATE_KEY`, and `EC2_KNOWN_HOSTS` secrets. The EC2 clone
+also needs a GitHub deploy key so its own `git pull` can read this repository.
 
 Enter an email and a password of at least 8 characters. A new email creates an account; an existing email signs in. There is intentionally no password-reset flow.
 
-The container is left running by the build process. Stop it with:
+For a standalone installation, stop the container with:
 
     docker compose down
 
-The down command preserves the named data volume. Do not add -v unless you intend to delete every account, profile, and measurement.
+The down command preserves the named data volume. Do not add `-v` unless you
+intend to delete every account, profile, and measurement.
 
 ## What is included
 
@@ -81,7 +106,8 @@ Supported units:
 
 SQLite data is stored in the Docker volume measure-the-baby_growth_data. The in-app CSV export is the simplest portable backup. For a full backup, stop the stack and copy the contents of that named volume with Docker Desktop or your usual volume-backup tool.
 
-Set `COOKIE_SECURE=true` on EC2 so session cookies are HTTPS-only. Keep it `false` for local HTTP development.
+The production Compose overlay makes session cookies HTTPS-only. Local Compose
+uses non-secure cookies because `baby.localhost` is plain HTTP.
 
 ## Growth references
 

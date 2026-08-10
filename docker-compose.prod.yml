@@ -1,0 +1,11 @@
+# Production adds HTTPS policy to the Traefik-integrated application stack. Use
+# this with both docker-compose.yml and docker-compose.traefik.yml.
+
+services:
+  app:
+    environment:
+      COOKIE_SECURE: 'true'
+    labels:
+      traefik.http.routers.measure-the-baby.entrypoints: websecure
+      traefik.http.routers.measure-the-baby.tls: 'true'
+      traefik.http.routers.measure-the-baby.tls.certresolver: letsencrypt

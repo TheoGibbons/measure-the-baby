@@ -1,45 +1,23 @@
+# Proxy-agnostic application core. Docker Compose automatically adds
+# docker-compose.override.yml for standalone use. Traefik deployments explicitly
+# combine this file with docker-compose.traefik.yml instead.
+
+name: measure-the-baby
+
 services:
   app:
     build: .
     container_name: measure-the-baby
     restart: unless-stopped
     expose:
-      - "3000"
-    ports:
-      - "127.0.0.1:${APP_PORT:?Set APP_PORT in .env}:3000"
+      - '3000'
     environment:
       DATABASE_PATH: /data/growth.sqlite
       PORT: 3000
       SESSION_DAYS: 30
-      COOKIE_SECURE: "${COOKIE_SECURE:-true}"
+      COOKIE_SECURE: 'false'
     volumes:
       - growth_data:/data
-    networks:
-      - traefik
-    labels:
-      - "traefik.enable=${TRAEFIK_ENABLED:-true}"
-      - "traefik.docker.network=${TRAEFIK_NETWORK:-traefik}"
-      - "traefik.http.routers.measure-the-baby.rule=Host(`${APP_HOST:?Set APP_HOST in .env}`)"
-      - "traefik.http.routers.measure-the-baby.entrypoints=${TRAEFIK_ENTRYPOINT:-websecure}"
-      - "traefik.http.routers.measure-the-baby.tls=true"
-      - "traefik.http.routers.measure-the-baby.tls.certresolver=${TRAEFIK_CERT_RESOLVER:-letsencrypt}"
-      - "traefik.http.routers.measure-the-baby.service=measure-the-baby"
-      - "traefik.http.routers.measure-the-baby.middlewares=measure-the-baby-compress@docker,measure-the-baby-security@docker"
-      - "traefik.http.services.measure-the-baby.loadbalancer.server.port=3000"
-      - "traefik.http.services.measure-the-baby.loadbalancer.server.scheme=http"
-      - "traefik.http.services.measure-the-baby.loadbalancer.healthcheck.path=/healthz"
-      - "traefik.http.services.measure-the-baby.loadbalancer.healthcheck.interval=30s"
-      - "traefik.http.services.measure-the-baby.loadbalancer.healthcheck.timeout=3s"
-      - "traefik.http.middlewares.measure-the-baby-compress.compress=true"
-      - "traefik.http.middlewares.measure-the-baby-security.headers.stsSeconds=31536000"
-      - "traefik.http.middlewares.measure-the-baby-security.headers.contentTypeNosniff=true"
-      - "traefik.http.middlewares.measure-the-baby-security.headers.frameDeny=true"
-      - "traefik.http.middlewares.measure-the-baby-security.headers.referrerPolicy=no-referrer"
 
 volumes:
   growth_data:
-
-networks:
-  traefik:
-    external: ${TRAEFIK_NETWORK_EXTERNAL:-true}
-    name: "${TRAEFIK_NETWORK:-traefik}"
