@@ -485,7 +485,7 @@
     .chart-table-wrap {
       position: absolute;
       z-index: 3;
-      right: 19px;
+      right: 20px;
       bottom: 42px;
       width: min(48%, 340px);
       max-height: 35%;
@@ -687,7 +687,7 @@
       .toolbar-spacer { display: none; }
       .measure-toolbar > .secondary { flex: 1; }
       .chart-card { height: 620px; }
-      .chart-table-wrap { width: 56%; max-height: 31%; right: 8px; bottom: 30px; }
+      .chart-table-wrap { width: 56%; max-height: 31%; }
       .entry-row, .entry-labels { grid-template-columns: 1fr 1fr 85px 38px; }
       .entry-row textarea { grid-column: 1 / 4; }
       .entry-labels span:nth-child(4) { display: none; }
@@ -709,6 +709,38 @@
     }
 
     @page { size: letter portrait; margin: .32in; }
+
+    /*
+      Give canvas charts their final paper dimensions before the browser enters
+      print preview. Mobile browsers otherwise redraw against the narrow screen
+      and then stretch that bitmap to the width of the printed page.
+    */
+    html.print-layout { min-width: 0; }
+    html.print-layout body { width: 7.86in; }
+    html.print-layout .app-view { padding: 0; }
+    html.print-layout .page-shell { width: 7.86in; max-width: none; margin: 0; }
+    html.print-layout .charts-grid { display: block; }
+    html.print-layout .chart-card {
+      width: 100%;
+      height: 4.65in;
+      margin: 0 0 .18in;
+    }
+    html.print-layout .chart-head { min-height: .48in; padding: 8px 12px 6px; }
+    html.print-layout .chart-title h2 { font-size: 12pt; }
+    html.print-layout .chart-current,
+    html.print-layout .chart-title p { font-size: 6.5pt; }
+    html.print-layout .chart-table-wrap {
+      right: 20px;
+      bottom: 42px;
+      width: 43%;
+      max-height: 34%;
+      box-shadow: none;
+    }
+    html.print-layout .chart-table { font-size: 5.4pt; }
+    html.print-layout .chart-table th { font-size: 4.7pt; }
+    html.print-layout .chart-table th,
+    html.print-layout .chart-table td { padding: 2px 3px; }
+    html.print-layout .chart-footnote { min-height: 21px; padding: 4px 10px; font-size: 5.5pt; }
 
     @media print {
       html, body { width: 100%; background: white !important; print-color-adjust: exact; -webkit-print-color-adjust: exact; }
@@ -732,7 +764,7 @@
       .chart-title h2 { font-size: 12pt; }
       .chart-current { font-size: 6.5pt; }
       .chart-title p { font-size: 6.5pt; }
-      .chart-table-wrap { right: 31px; bottom: 35px; width: 43%; max-height: 34%; box-shadow: none; }
+      .chart-table-wrap { right: 20px; bottom: 42px; width: 43%; max-height: 34%; box-shadow: none; }
       .chart-table { font-size: 5.4pt; }
       .chart-table th { font-size: 4.7pt; }
       .chart-table th, .chart-table td { padding: 2px 3px; }
@@ -1496,11 +1528,26 @@
 
     function preparePrint() {
       setPrintDocumentTitle();
+      document.documentElement.classList.add("print-layout");
+      if (state.drawFrame) {
+        cancelAnimationFrame(state.drawFrame);
+        state.drawFrame = null;
+      }
       drawAllCharts();
     }
 
     function finishPrint() {
+      document.documentElement.classList.remove("print-layout");
       document.title = defaultDocumentTitle;
+      scheduleDraw();
+    }
+
+    function printCharts() {
+      preparePrint();
+      requestAnimationFrame(function () {
+        drawAllCharts();
+        requestAnimationFrame(function () { window.print(); });
+      });
     }
 
     function scheduleDraw() {
@@ -1866,7 +1913,7 @@
     byId("csvInput").addEventListener("change", importCsvFile);
     byId("measurementForm").addEventListener("submit", saveMeasurements);
     byId("deleteMeasurementButton").addEventListener("click", deleteMeasurement);
-    byId("printButton").addEventListener("click", function () { preparePrint(); setTimeout(function () { window.print(); }, 60); });
+    byId("printButton").addEventListener("click", printCharts);
     byId("exportButton").addEventListener("click", function () {
       if (state.profile) window.location.href = "/api/profiles/" + state.profile.id + "/export.csv";
     });
