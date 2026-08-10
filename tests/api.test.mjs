@@ -104,6 +104,12 @@ test("signup-or-login, profile ownership, and measurement lifecycle", async () =
   const forbiddenByOwnership = await request(`/api/profiles/${profileId}`, {}, otherSignup.cookie);
   assert.equal(forbiddenByOwnership.response.status, 404);
 
+  const disposable = await request("/api/profiles", { method: "POST", body: {} }, cookie);
+  const deletedProfile = await request(`/api/profiles/${disposable.body.profile.id}`, { method: "DELETE" }, cookie);
+  assert.equal(deletedProfile.response.status, 200);
+  const deletedLookup = await request(`/api/profiles/${disposable.body.profile.id}`, {}, cookie);
+  assert.equal(deletedLookup.response.status, 404);
+
   const removed = await request(`/api/measurements/${measurementId}`, { method: "DELETE" }, cookie);
   assert.equal(removed.response.status, 200);
   assert.equal(removed.body.measurements.length, 2);
