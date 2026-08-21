@@ -85,7 +85,7 @@ intend to delete every account, profile, and measurement.
 - Full CSV export, with exported files accepted by each metric's import flow
 - Two-page print layout with two charts per page and app controls hidden
 - Installable PWA manifest and app-shell service worker
-- Account isolation, scrypt password hashing, opaque HTTP-only sessions, input validation, and basic sign-in rate limiting
+- Account isolation, scrypt password hashing, opaque HTTP-only sessions that stay signed in for five years, input validation, and basic sign-in rate limiting
 
 ## CSV format
 
@@ -109,6 +109,13 @@ SQLite data is stored in the Docker volume measure-the-baby_growth_data. The in-
 
 The production Compose overlay makes session cookies HTTPS-only. Local Compose
 uses non-secure cookies because `baby.localhost` is plain HTTP.
+
+Signing in lasts five years, so reopening the app goes straight to the charts.
+Browsers will not hold a cookie that long in one go (Chromium clamps expiry to
+400 days), so the session cookie is re-issued each time the app checks its
+session; opening the app at least once a year carries the full term. Change
+`SESSION_DAYS` in `docker-compose.yml` to shorten it, and use Sign out to end a
+session on the server immediately.
 
 ## Growth references
 

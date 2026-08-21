@@ -14,7 +14,7 @@ services:
     environment:
       DATABASE_PATH: /data/growth.sqlite
       PORT: 3000
-      SESSION_DAYS: 30
+      SESSION_DAYS: 1826
       COOKIE_SECURE: 'false'
     volumes:
       - growth_data:/data

@@ -7,6 +7,7 @@ import { join } from "node:path";
 const testDir = await mkdtemp(join(tmpdir(), "measure-the-baby-test-"));
 process.env.DATABASE_PATH = join(testDir, "test.sqlite");
 process.env.PORT = "0";
+delete process.env.SESSION_DAYS;
 const { createApp, closeDatabase } = await import("../server.mjs?test=" + Date.now());
 const server = createApp();
 await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
@@ -141,4 +142,31 @@ test("validation and logout reject unsafe or invalid data", async () => {
   assert.equal(logout.response.status, 200);
   const afterLogout = await request(`/api/profiles/${profileId}`, {}, cookie);
   assert.equal(afterLogout.response.status, 401);
+});
+
+test("sign-in lasts five years and is renewed each time the app reopens", async () => {
+  const FIVE_YEARS = 1826 * 24 * 60 * 60;
+  const signup = await request("/api/auth", {
+    method: "POST",
+    body: { email: "returning@example.com", password: "five year password" },
+  });
+  assert.equal(signup.response.status, 201);
+
+  const issued = signup.response.headers.get("set-cookie");
+  assert.match(issued, /HttpOnly/);
+  assert.equal(Number(/Max-Age=(\d+)/.exec(issued)[1]), FIVE_YEARS);
+
+  const reopened = await request("/api/session", {}, signup.cookie);
+  assert.equal(reopened.response.status, 200);
+  assert.equal(reopened.body.user.email, "returning@example.com");
+  assert.equal(reopened.body.user.sessionExpiresAt, undefined);
+
+  const renewed = reopened.response.headers.get("set-cookie");
+  assert.ok(renewed.startsWith(signup.cookie), "renewal keeps the same token");
+  const renewedMaxAge = Number(/Max-Age=(\d+)/.exec(renewed)[1]);
+  assert.ok(renewedMaxAge > FIVE_YEARS - 60 && renewedMaxAge <= FIVE_YEARS);
+
+  const anonymous = await request("/api/session");
+  assert.equal(anonymous.body.user, null);
+  assert.equal(anonymous.response.headers.get("set-cookie"), null);
 });

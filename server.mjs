@@ -14,7 +14,9 @@ const ROOT = dirname(fileURLToPath(import.meta.url));
 const PUBLIC_DIR = join(ROOT, "public");
 const PORT = Number(process.env.PORT || 3000);
 const DATABASE_PATH = process.env.DATABASE_PATH || join(ROOT, "data", "growth.sqlite");
-const SESSION_DAYS = Math.max(1, Number(process.env.SESSION_DAYS || 30));
+// Five years, leap day included. Signing in once should be the last time a
+// parent has to think about it.
+const SESSION_DAYS = Math.max(1, Number(process.env.SESSION_DAYS || 1826));
 const COOKIE_SECURE = process.env.COOKIE_SECURE === "true";
 const SESSION_COOKIE = "growth_session";
 const MAX_BODY_BYTES = 1_000_000;
@@ -133,7 +135,7 @@ function currentUser(req) {
   const token = parseCookies(req)[SESSION_COOKIE];
   if (!token) return null;
   return db.prepare(`
-    SELECT users.id, users.email
+    SELECT users.id, users.email, sessions.expires_at AS sessionExpiresAt
     FROM sessions
     JOIN users ON users.id = sessions.user_id
     WHERE sessions.token_hash = ? AND datetime(sessions.expires_at) > datetime('now')
@@ -150,6 +152,17 @@ function sessionCookie(token, maxAgeSeconds) {
   ];
   if (COOKIE_SECURE) parts.push("Secure");
   return parts.join("; ");
+}
+
+// Browsers refuse to hold a cookie as long as the stored session lasts, and
+// Chromium clamps any Max-Age past 400 days down to that ceiling. Re-issuing the
+// cookie whenever the app checks its session pushes the ceiling forward, so
+// opening the app once a year carries the full five-year term.
+function renewedSessionCookie(req, user) {
+  const token = parseCookies(req)[SESSION_COOKIE];
+  const remaining = Math.floor((Date.parse(user.sessionExpiresAt) - Date.now()) / 1000);
+  if (!token || !Number.isFinite(remaining) || remaining <= 0) return {};
+  return { "Set-Cookie": sessionCookie(token, remaining) };
 }
 
 function verifySameOrigin(req) {
@@ -324,7 +337,10 @@ async function api(req, res, url) {
   const user = currentUser(req);
   if (req.method === "GET" && url.pathname === "/api/session") {
     if (!user) return json(res, 200, { user: null, profiles: [] });
-    return json(res, 200, { user, profiles: listProfiles(user.id) });
+    return json(res, 200, {
+      user: { id: user.id, email: user.email },
+      profiles: listProfiles(user.id),
+    }, renewedSessionCookie(req, user));
   }
   if (!user) return fail(res, 401, "Sign in to continue.", "not_authenticated");
 
