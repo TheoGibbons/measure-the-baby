@@ -34,4 +34,4 @@ jobs:
         run: |
           ssh -i ~/.ssh/deploy_key -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes \
             "$EC2_USER@$EC2_HOST" \
-            'cd "$HOME/projects/measure-the-baby" && ./scripts/deploy.sh'
+            'cd "$HOME/projects/measure-the-baby" && bash ./scripts/deploy.sh'

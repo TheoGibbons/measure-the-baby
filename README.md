@@ -1,79 +1,149 @@
 # Measure the Baby
 
-A small, private baby growth-chart app. It runs as one Docker container, stores its data in a persistent SQLite volume, and serves a framework-free single-page frontend.
+A small, private baby growth-chart app. One Docker container, a persistent SQLite
+volume, and a framework-free single-page frontend. WHO percentile curves are checked
+in, so it draws charts with no internet access.
 
-## Start with Docker
+## Deploying to LIVE
 
-Traefik is optional. A normal clone runs as a standalone application:
+Needs only Docker and the Compose plugin. This path does not involve Traefik and
+publishes plain HTTP on port 80 — **put your own TLS terminator in front**
+(Cloudflare, nginx or Caddy). Session cookies stay non-secure on this path, so do not
+serve it over plain HTTP on an untrusted network.
 
 ```bash
+git clone https://github.com/TheoGibbons/measure-the-baby.git ~/projects/measure-the-baby
+cd ~/projects/measure-the-baby
+cp .env.production.example .env
+
+# Set before continuing:
+#   APP_BIND=0.0.0.0   APP_PORT=80   publishes publicly instead of on loopback
+# APP_HOST is ignored on this path; it belongs to the Traefik overlay.
+nano .env
+
 docker compose up -d --build
 ```
 
-Open <http://localhost:3081>. Plain Docker Compose automatically merges
-`docker-compose.override.yml`, which publishes the app on loopback. To change
-the bind address or port, copy `.env.example` to `.env` and edit `APP_BIND` or
-`APP_PORT`.
+Security group:
 
-## Develop through the shared Traefik proxy
+| TCP port | Allowed source | Purpose |
+|---|---|---|
+| 22 | Administrator IP | SSH |
+| 80 | Public internet, or your TLS terminator only | Application |
 
-The shared Traefik stack must be running first. From its repository:
+## Deploying to LIVE with hobby-traefik
+
+This is how it actually runs. Traefik owns 80 and 443, terminates HTTPS with Let's
+Encrypt, and the app publishes no host port of its own.
+
+Point `APP_HOST`'s DNS record at the instance **before** deploying, or Let's Encrypt
+cannot validate it. If the shared proxy is not on this instance yet:
 
 ```bash
+git clone https://github.com/TheoGibbons/hobby-traefik.git ~/projects/hobby-traefik
 cd ~/projects/hobby-traefik
-./scripts/up-local.sh
+bash scripts/deploy.sh
 ```
 
-Then start this application:
+Then:
 
 ```bash
-cd ~/projects/measure-the-baby
-cp .env.traefik.example .env
-./scripts/up-local.sh
-```
-
-Open <http://baby.localhost:8085>. The local script explicitly combines the
-proxy-agnostic core with `docker-compose.traefik.yml`, so it does not load the
-standalone port override. Traffic follows the same Traefik-to-container path
-used on EC2.
-
-### Deploy on EC2
-
-Deploy the central `hobby-traefik` repository first. Then clone this repository
-at the path expected by its deployment workflow and set the public hostname:
-
-```bash
-git clone git@github.com:TheoGibbons/measure-the-baby.git ~/projects/measure-the-baby
+git clone https://github.com/TheoGibbons/measure-the-baby.git ~/projects/measure-the-baby
 cd ~/projects/measure-the-baby
 cp .env.production.example .env
+
+# Set before continuing:
+#   APP_HOST  public DNS name, already pointing at this instance
 nano .env
-chmod +x scripts/deploy.sh
-./scripts/deploy.sh
+
+bash scripts/deploy.sh
 ```
 
-The script pulls with `--ff-only`, combines the core, Traefik, and production
-overlays, rebuilds, and waits for the health check. Production forces secure
-cookies and adds TLS through the shared `letsencrypt` resolver.
+Open the HTTPS hostname you set as `APP_HOST`. Production forces secure cookies and
+adds TLS through the shared `letsencrypt` resolver.
 
-Open the HTTPS hostname configured as `APP_HOST`.
+Security group: 22 for administration, 80 and 443 for Traefik. Nothing else.
 
-### Push-to-deploy
+## Deploying Locally
 
-`.github/workflows/deploy.yml` invokes the same script after a push to `main`.
-Create a GitHub environment named `production` and configure `EC2_HOST`,
-`EC2_USER`, `EC2_SSH_PRIVATE_KEY`, and `EC2_KNOWN_HOSTS` secrets. The EC2 clone
-also needs a GitHub deploy key so its own `git pull` can read this repository.
+Needs only Docker. Nothing is published beyond loopback.
 
-Enter an email and a password of at least 8 characters. A new email creates an account; an existing email signs in. There is intentionally no password-reset flow.
+```bash
+git clone https://github.com/TheoGibbons/measure-the-baby.git ~/projects/measure-the-baby
+cd ~/projects/measure-the-baby
+cp .env.example .env
 
-For a standalone installation, stop the container with:
+bash scripts/up-local.sh
+```
 
-    docker compose down
+Open <http://localhost:3081>. Change `APP_BIND` or `APP_PORT` in `.env` to move it.
 
-The down command preserves the named data volume. Do not add `-v` unless you
-intend to delete every account, profile, and measurement.
+## Deploying Locally with hobby-traefik
 
-## What is included
+Start the shared proxy first if it is not already running:
+
+```bash
+git clone https://github.com/TheoGibbons/hobby-traefik.git ~/projects/hobby-traefik
+cd ~/projects/hobby-traefik
+cp .env.example .env
+bash scripts/up-local.sh
+```
+
+Then:
+
+```bash
+git clone https://github.com/TheoGibbons/measure-the-baby.git ~/projects/measure-the-baby
+cd ~/projects/measure-the-baby
+cp .env.traefik.example .env
+
+bash scripts/up-local-traefik.sh
+```
+
+Open <http://baby.localhost:8085>. The script passes its `-f` files explicitly, so
+Compose does not also load the standalone port override — traffic follows the same
+Traefik-to-container path used on the server.
+
+## Setup push-to-deploy
+
+A push to `main` runs `.github/workflows/deploy.yml`, which SSHes to the instance and
+runs `bash scripts/deploy.sh` in `~/projects/measure-the-baby`.
+
+**Part 1 — once per server, not once per project.** The instance needs to read GitHub
+so `git pull --ff-only` works. Skip this if another project on the same box has
+already done it; skip it entirely if this repository is public.
+
+```bash
+# On the EC2 instance. Create a fine-grained PAT with Contents: Read-only,
+# scoped to the repositories this box deploys:
+#   https://github.com/settings/personal-access-tokens
+read -rsp 'PAT: ' PAT && echo
+
+git config --global credential.helper store
+printf 'https://x-access-token:%s@github.com\n' "$PAT" > ~/.git-credentials
+chmod 600 ~/.git-credentials
+```
+
+A deploy key cannot be shared between projects: GitHub binds one to a single
+repository and rejects the same key on a second with "Key is already in use". One
+PAT covers every repository on the box.
+
+**Part 2 — once per repository.** The same EC2 keypair is reused for every project,
+so only these four secrets are new. Create a GitHub environment named `production`,
+then:
+
+```bash
+# Locally, with the gh CLI authenticated:
+gh secret set EC2_HOST            --env production --body '<ec2-public-dns>'
+gh secret set EC2_USER            --env production --body 'ubuntu'
+gh secret set EC2_SSH_PRIVATE_KEY --env production < ~/.ssh/<ec2-deploy-key>
+gh secret set EC2_KNOWN_HOSTS     --env production \
+  --body "$(ssh-keyscan -H <ec2-public-dns> 2>/dev/null)"
+```
+
+The deploy stops rather than overwrite tracked files edited directly on the server.
+Commit through Git instead of letting the live and local copies drift.
+
+## What it is
 
 - Immediate blank-profile creation, followed by in-place name, sex, and date-of-birth editing
 - Separate length/height, weight, head circumference, and BMI-for-age charts
@@ -85,9 +155,21 @@ intend to delete every account, profile, and measurement.
 - Full CSV export, with exported files accepted by each metric's import flow
 - Two-page print layout with two charts per page and app controls hidden
 - Installable PWA manifest and app-shell service worker
-- Account isolation, scrypt password hashing, opaque HTTP-only sessions that stay signed in for five years, input validation, and basic sign-in rate limiting
+- Account isolation, scrypt password hashing, opaque HTTP-only sessions, input validation, and basic sign-in rate limiting
 
-## CSV format
+Enter an email and a password of at least 8 characters. A new email creates an
+account; an existing email signs in. There is intentionally no password-reset flow.
+
+## How it works
+
+One container built from this repository, storing everything in a SQLite file on the
+`measure-the-baby_growth_data` volume. `docker-compose.yml` is proxy-agnostic;
+`docker-compose.override.yml` adds the standalone host port and is loaded
+automatically by plain `docker compose` commands, while `docker-compose.traefik.yml`
+and `docker-compose.prod.yml` are passed explicitly by the scripts and therefore
+suppress it.
+
+### CSV format
 
 Metric modals accept:
 
@@ -95,7 +177,8 @@ Metric modals accept:
     2026-01-15,68.2,cm,Clinic visit
     2026-02-15,69.1,cm,
 
-A full export adds a type column. If that file is imported from a metric modal, only rows matching the open metric are added to the review grid.
+A full export adds a type column. If that file is imported from a metric modal, only
+rows matching the open metric are added to the review grid.
 
 Supported units:
 
@@ -103,37 +186,69 @@ Supported units:
 - Weight: kg, lb
 - BMI: kg/m2
 
-## Data and backups
+### Growth references
 
-SQLite data is stored in the Docker volume measure-the-baby_growth_data. The in-app CSV export is the simplest portable backup. For a full backup, stop the stack and copy the contents of that named volume with Docker Desktop or your usual volume-backup tool.
-
-The production Compose overlay makes session cookies HTTPS-only. Local Compose
-uses non-secure cookies because `baby.localhost` is plain HTTP.
-
-Signing in lasts five years, so reopening the app goes straight to the charts.
-Browsers will not hold a cookie that long in one go (Chromium clamps expiry to
-400 days), so the session cookie is re-issued each time the app checks its
-session; opening the app at least once a year carries the full term. Change
-`SESSION_DAYS` in `docker-compose.yml` to shorten it, and use Sign out to end a
-session on the server immediately.
-
-## Growth references
-
-Reference values are generated from the official WHO Child Growth Standards percentile workbooks for birth through 5 years:
+Reference values are generated from the official WHO Child Growth Standards
+percentile workbooks for birth through 5 years:
 
 https://www.who.int/tools/child-growth-standards/standards
 
-The checked-in public/growth-data.json lets the app draw curves without internet access. To refresh it:
+The checked-in `public/growth-data.json` lets the app draw curves without internet
+access. To refresh it:
 
     powershell -File scripts\fetch-growth-data.ps1
 
-The WHO curves stop at 60 months; personal measurements and the chart age axis may continue beyond that point. Length references are used through 24 months and standing-height references from 25 months.
+The WHO curves stop at 60 months; personal measurements and the chart age axis may
+continue beyond that point. Length references are used through 24 months and standing
+-height references from 25 months.
 
-Growth charts are screening aids, not diagnostic tools. Measurement technique, prematurity, and clinical context matter; discuss growth concerns with a qualified clinician.
+Growth charts are screening aids, not diagnostic tools. Measurement technique,
+prematurity, and clinical context matter; discuss growth concerns with a qualified
+clinician.
 
-## Local development
+## Configuration
 
-Node.js 24 or newer is required because the backend uses Node's built-in SQLite support.
+| Variable | Where | Purpose |
+|---|---|---|
+| `APP_BIND` | `.env` | Host interface for the standalone port. `127.0.0.1` locally, `0.0.0.0` for standalone LIVE |
+| `APP_PORT` | `.env` | Host port for the standalone path. `3081` locally, `80` for standalone LIVE |
+| `APP_HOST` | `.env` | Public hostname, read only by the Traefik overlay |
+| `SESSION_DAYS` | `docker-compose.yml` | Session lifetime, default 1826 days |
+| `COOKIE_SECURE` | Compose overlays | `true` in production, `false` locally because `baby.localhost` is plain HTTP |
+
+Signing in lasts five years, so reopening the app goes straight to the charts.
+Browsers will not hold a cookie that long in one go (Chromium clamps expiry to 400
+days), so the session cookie is re-issued each time the app checks its session;
+opening the app at least once a year carries the full term. Use Sign out to end a
+session on the server immediately.
+
+## Operating it
+
+Stop the stack without losing data:
+
+```bash
+docker compose down
+```
+
+That preserves the named data volume. **Do not add `-v`** unless you intend to delete
+every account, profile, and measurement.
+
+SQLite data lives in the Docker volume `measure-the-baby_growth_data`. The in-app CSV
+export is the simplest portable backup. For a full backup, stop the stack and copy the
+contents of that named volume.
+
+## Security notes
+
+- The standalone LIVE path serves plain HTTP with non-secure session cookies. It is
+  intended to sit behind a TLS terminator, not to face the internet directly.
+- The Traefik path forces HTTPS and secure cookies.
+- There is no password-reset flow by design, so an unrecoverable password means an
+  unrecoverable account.
+
+## Development
+
+Node.js 24 or newer is required, because the backend uses Node's built-in SQLite
+support.
 
     npm.cmd start
     npm.cmd test
