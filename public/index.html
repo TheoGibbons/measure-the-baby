@@ -1306,21 +1306,41 @@
       return rows.filter(function (row) { return row.month <= Math.min(xMax, 60.2); });
     }
 
-    function referenceValuesAtAge(metric, month) {
-      if (!state.references || !state.profile || !state.profile.sex || !Number.isFinite(month)) return null;
-      var rows = (((state.references.data || {})[state.profile.sex] || {})[metric] || []);
-      if (!rows.length || month < rows[0].month || month > rows[rows.length - 1].month) return null;
+    function referenceLmsAtAge(metric, days) {
+      if (!state.references || !state.profile || !state.profile.sex || !Number.isInteger(days) || days < 0 || days / 30.4375 > 60) return null;
+      var rows = (((state.references.lms || {})[state.profile.sex] || {})[metric] || []);
+      return rows[days] || null;
+    }
 
-      var upperIndex = rows.findIndex(function (row) { return row.month >= month; });
-      var upper = rows[upperIndex];
-      var lower = rows[Math.max(0, upperIndex - 1)];
-      var ratio = upper.month === lower.month ? 0 : (month - lower.month) / (upper.month - lower.month);
-      var values = {};
-      [3, 15, 50, 85, 97].forEach(function (percentile) {
-        var key = "p" + percentile;
-        values[key] = lower[key] + (upper[key] - lower[key]) * ratio;
-      });
-      return values;
+    function normalCdf(z) {
+      // Abramowitz & Stegun 26.2.17; absolute error below 7.5e-8.
+      var x = Math.abs(z);
+      var t = 1 / (1 + 0.2316419 * x);
+      var tail = Math.exp(-x * x / 2) / Math.sqrt(2 * Math.PI) * t *
+        (0.319381530 + t * (-0.356563782 + t * (1.781477937 + t * (-1.821255978 + t * 1.330274429))));
+      return z < 0 ? tail : 1 - tail;
+    }
+
+    function lmsZScore(value, reference, metric) {
+      var l = reference[0], m = reference[1], s = reference[2];
+      var z = l === 0 ? Math.log(value / m) / s : Math.expm1(l * Math.log(value / m)) / (l * s);
+      // WHO uses a fixed SD interval beyond +/-3 for skewed weight/BMI distributions.
+      if ((metric === "weight" || metric === "bmi") && Math.abs(z) > 3) {
+        var edgeZ = z < 0 ? -3 : 3;
+        var innerZ = z < 0 ? -2 : 2;
+        var edge = l === 0 ? m * Math.exp(s * edgeZ) : m * Math.pow(1 + l * s * edgeZ, 1 / l);
+        var inner = l === 0 ? m * Math.exp(s * innerZ) : m * Math.pow(1 + l * s * innerZ, 1 / l);
+        z = edgeZ + (value - edge) / Math.abs(edge - inner);
+      }
+      return z;
+    }
+
+    function measurementPercentile(row, metric) {
+      if (!row || !row.measuredOn || !state.profile || !state.profile.dateOfBirth) return null;
+      var reference = referenceLmsAtAge(metric, daysBetween(state.profile.dateOfBirth, row.measuredOn));
+      var value = Number(row.valueMetric);
+      if (!reference || !Number.isFinite(value) || value <= 0) return null;
+      return normalCdf(lmsZScore(value, reference, metric)) * 100;
     }
 
     function ordinal(value) {
@@ -1331,25 +1351,11 @@
     }
 
     function percentileForMeasurement(row, metric) {
-      if (!row) return null;
-      var reference = referenceValuesAtAge(metric, ageMonths(row.measuredOn));
-      if (!reference) return null;
-      var percentiles = [3, 15, 50, 85, 97];
-      var value = Number(row.valueMetric);
-      if (value < reference.p3) return "<" + ordinal(3) + " percentile";
-      if (value > reference.p97) return ">" + ordinal(97) + " percentile";
-
-      for (var index = 0; index < percentiles.length - 1; index++) {
-        var lowerPercentile = percentiles[index];
-        var upperPercentile = percentiles[index + 1];
-        var lowerValue = reference["p" + lowerPercentile];
-        var upperValue = reference["p" + upperPercentile];
-        if (value <= upperValue) {
-          var ratio = upperValue === lowerValue ? 0 : (value - lowerValue) / (upperValue - lowerValue);
-          return ordinal(Math.round(lowerPercentile + (upperPercentile - lowerPercentile) * ratio)) + " percentile";
-        }
-      }
-      return ordinal(97) + " percentile";
+      var percentile = measurementPercentile(row, metric);
+      if (percentile === null) return null;
+      if (percentile < 3) return "<3rd percentile";
+      if (percentile > 97) return ">97th percentile";
+      return ordinal(Math.round(percentile)) + " percentile";
     }
 
     function relativeMeasurementDate(dateValue) {
@@ -1719,6 +1725,9 @@
           comments: ""
         }));
       }
+      if (metric === "length") {
+        byId("measurementSubtitle").textContent += " Use lying-down length before age 2 and standing height from age 2. If measured lying down at age 2 or older, subtract 0.7 cm before entering.";
+      }
       dialog.showModal();
       document.body.classList.add("modal-open");
       setTimeout(function () { dialog.querySelector(".entry-value").focus(); }, 50);
@@ -1918,7 +1927,7 @@
       try {
         var results = await Promise.all([
           apiFetch("/api/session"),
-          fetch("/growth-data.json").then(function (response) {
+          fetch("/growth-data.json?v=2").then(function (response) {
             if (!response.ok) throw new Error("Growth references could not be loaded.");
             return response.json();
           })

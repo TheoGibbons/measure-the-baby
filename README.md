@@ -189,18 +189,29 @@ Supported units:
 ### Growth references
 
 Reference values are generated from the official WHO Child Growth Standards
-percentile workbooks for birth through 5 years:
+expanded daily LMS workbooks for birth through 5 years:
 
 https://www.who.int/tools/child-growth-standards/standards
 
-The checked-in `public/growth-data.json` lets the app draw curves without internet
-access. To refresh it:
+The checked-in `public/growth-data.json` lets the app calculate percentiles and draw
+curves without internet access. To refresh it (Python 3.8+, no extra packages):
 
-    powershell -File scripts\fetch-growth-data.ps1
+    python3 scripts/fetch-growth-data.py
+
+Percentiles use sex-specific LMS parameters for the exact age in calendar days,
+the WHO LMS z-score formula, and the standard normal cumulative distribution.
+The displayed rank is rounded to the nearest integer, with `<3rd` / `>97th` labels
+outside the outer chart curves. Weight and BMI apply WHO's SD-interval adjustment
+beyond z-scores of ±3. Chart curves are sampled separately; percentile calculations
+do not interpolate between the drawn curves or round age to months.
 
 The WHO curves stop at 60 months; personal measurements and the chart age axis may
-continue beyond that point. Length references are used through 24 months and standing
--height references from 25 months.
+continue beyond that point. WHO's daily tables use lying-down length through day
+730 and standing height from day 731. The height and BMI curves preserve that
+transition. Entries must use the corresponding measurement method; the app does
+not store posture or automatically convert it. For a lying-down measurement at age
+2 or older, subtract 0.7 cm before entering it (add 0.7 cm for a standing measurement
+before age 2). Age is chronological; prematurity is not automatically corrected.
 
 Growth charts are screening aids, not diagnostic tools. Measurement technique,
 prematurity, and clinical context matter; discuss growth concerns with a qualified

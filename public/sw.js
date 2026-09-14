@@ -1,5 +1,5 @@
-const CACHE = "measure-the-baby-v4";
-const SHELL = ["/", "/index.html", "/manifest.webmanifest", "/icon.svg", "/growth-data.json"];
+const CACHE = "measure-the-baby-v5";
+const SHELL = ["/", "/index.html", "/manifest.webmanifest", "/icon.svg", "/growth-data.json?v=2"];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(caches.open(CACHE).then((cache) => cache.addAll(SHELL)));
