@@ -1744,7 +1744,11 @@
       }
       dialog.showModal();
       document.body.classList.add("modal-open");
-      setTimeout(function () { dialog.querySelector(".entry-value").focus(); }, 50);
+      setTimeout(function () {
+        var input = dialog.querySelector(".entry-value");
+        input.focus();
+        input.select();
+      }, 50);
     }
 
     function closeDialog(id) {
@@ -2016,8 +2020,16 @@
     });
     document.querySelectorAll("dialog").forEach(function (dialog) {
       dialog.addEventListener("close", function () { document.body.classList.remove("modal-open"); });
+      // Only close when the press also started on the backdrop, so a text selection
+      // drag that ends outside the dialog doesn't dismiss it.
+      var pressStartedOnBackdrop = false;
+      dialog.addEventListener("pointerdown", function (event) {
+        pressStartedOnBackdrop = event.target === dialog;
+      });
       dialog.addEventListener("click", function (event) {
-        if (event.target === dialog) closeDialog(dialog.id);
+        var shouldClose = pressStartedOnBackdrop && event.target === dialog;
+        pressStartedOnBackdrop = false;
+        if (shouldClose) closeDialog(dialog.id);
       });
     });
     byId("addRowButton").addEventListener("click", addEntryRow);
