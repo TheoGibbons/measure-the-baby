@@ -53,6 +53,15 @@ test("848-day comparison agrees with WHO daily LMS values and an independent nor
   }
 });
 
+test("11 kg at 848 days rounds directly to the 8th percentile without double rounding", () => {
+  const { helpers, row } = fixture({ sex: "male", metric: "weight", value: 11 });
+  // WHO boys' day-848 LMS: L=-0.0331, M=12.904, S=0.11655.
+  // Independent Python math.erfc calculation; z=-1.3733556280365153.
+  closeTo(helpers.measurementPercentile(row, "weight"), 8.482090844033609);
+  // Rounding to one decimal first gives 8.5, then incorrectly rounds up to 9.
+  assert.equal(helpers.percentileForMeasurement(row, "weight"), "8th percentile");
+});
+
 test("daily tables cover both sexes and all metrics with valid parameters and median ranks", () => {
   for (const sex of ["male", "female"]) {
     for (const metric of ["length", "weight", "head", "bmi"]) {

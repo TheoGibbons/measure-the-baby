@@ -1,21 +1,35 @@
-name: Deploy to EC2
+name: Test and deploy to EC2
 
 on:
   push:
     branches: [main]
+  pull_request:
+    branches: [main]
   workflow_dispatch:
-
-concurrency:
-  group: measure-the-baby-production
-  cancel-in-progress: false
 
 permissions:
   contents: read
 
 jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+          package-manager-cache: false
+      - run: npm ci
+      - run: npm test
+
   deploy:
+    needs: test
+    if: github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     environment: production
+    concurrency:
+      group: measure-the-baby-production
+      cancel-in-progress: false
     steps:
       - name: Configure SSH
         env:

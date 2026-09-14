@@ -105,8 +105,10 @@ Traefik-to-container path used on the server.
 
 ## Setup push-to-deploy
 
-A push to `main` runs `.github/workflows/deploy.yml`, which SSHes to the instance and
-runs `bash scripts/deploy.sh` in `~/projects/measure-the-baby`.
+A push to `main` runs `.github/workflows/deploy.yml`, which first runs `npm test`
+with Node 24. Only after the tests pass does it SSH to the instance and run
+`bash scripts/deploy.sh` in `~/projects/measure-the-baby`. Pull requests targeting
+`main` run the same tests without deploying. Run `npm test` locally before committing.
 
 **Part 1 — once per server, not once per project.** The instance needs to read GitHub
 so `git pull --ff-only` works. Skip this if another project on the same box has
