@@ -144,6 +144,30 @@ test("validation and logout reject unsafe or invalid data", async () => {
   assert.equal(afterLogout.response.status, 401);
 });
 
+test("measurement units preserve the metric inputs needed for head and BMI calculations", async () => {
+  const signup = await request("/api/auth", {
+    method: "POST", body: { email: "units@example.com", password: "measurement units" },
+  });
+  assert.equal(signup.response.status, 201);
+  const created = await request("/api/profiles", { method: "POST", body: {} }, signup.cookie);
+  const profileId = created.body.profile.id;
+  for (const [type, value, unit, expected] of [
+    ["head", 19, "in", 48.26],
+    ["head", 48.26, "cm", 48.26],
+    ["length", 35, "in", 88.9],
+    ["weight", 26.25, "lb", 11.9068],
+    ["bmi", 15.0234, "kg/m2", 15.0234],
+  ]) {
+    const result = await request(`/api/profiles/${profileId}/measurements`, {
+      method: "POST", body: { type, rows: [{ measuredOn: "2026-09-14", value, unit }] },
+    }, signup.cookie);
+    assert.equal(result.response.status, 201);
+    const stored = result.body.measurements.at(-1);
+    assert.equal(stored.valueMetric, expected);
+    assert.equal(stored.unitEntered, unit);
+  }
+});
+
 test("sign-in lasts five years and is renewed each time the app reopens", async () => {
   const FIVE_YEARS = 1826 * 24 * 60 * 60;
   const signup = await request("/api/auth", {

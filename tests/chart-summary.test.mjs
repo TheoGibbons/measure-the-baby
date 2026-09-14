@@ -4,6 +4,7 @@ import test from "node:test";
 
 const html = await readFile(new URL("../public/index.html", import.meta.url), "utf8");
 const references = JSON.parse(await readFile(new URL("../public/growth-data.json", import.meta.url), "utf8"));
+const publishedPercentiles = JSON.parse(await readFile(new URL("./fixtures/who-bmi-head-percentiles.json", import.meta.url), "utf8"));
 const sourceStart = html.indexOf("    function referenceLmsAtAge");
 const sourceEnd = html.indexOf("    function smoothLine", sourceStart);
 assert.notEqual(sourceStart, -1);
@@ -64,6 +65,23 @@ test("daily tables cover both sexes and all metrics with valid parameters and me
         const measured = new Date(Date.parse("2020-01-01") + day * 86400000).toISOString().slice(0, 10);
         const { helpers, row } = fixture({ sex, metric, born: "2020-01-01", measured, value: rows[day][1] });
         assert.equal(helpers.percentileForMeasurement(row, metric), "50th percentile");
+      }
+    }
+  }
+});
+
+test("BMI and head circumference agree with independent WHO published percentiles", () => {
+  // These measurements come from WHO's separate percentile workbooks, not our LMS generator.
+  // WHO publishes them to 0.001 kg/m² or cm, which introduces a small inverse-CDF error.
+  for (const { sex, metric, rows } of publishedPercentiles.sources) {
+    for (const [day, values] of rows) {
+      const measured = new Date(Date.parse("2020-01-01") + day * 86400000).toISOString().slice(0, 10);
+      for (const [index, value] of values.entries()) {
+        const expected = publishedPercentiles.percentiles[index];
+        const { helpers, row } = fixture({ sex, metric, born: "2020-01-01", measured, value });
+        closeTo(helpers.measurementPercentile(row, metric), expected, 0.025);
+        assert.equal(helpers.percentileForMeasurement(row, metric),
+          expected < 3 ? "<3rd percentile" : expected > 97 ? ">97th percentile" : `${expected}th percentile`);
       }
     }
   }

@@ -1242,7 +1242,8 @@
           id: "calculated-" + date,
           type: "bmi",
           measuredOn: date,
-          valueMetric: Math.round((weights[date].valueMetric / (metres * metres)) * 100) / 100,
+          // Keep full precision for the percentile; displayNumber rounds the visible BMI.
+          valueMetric: weights[date].valueMetric / (metres * metres),
           unitEntered: "kg/m2",
           comments: "Calculated from length + weight",
           calculated: true

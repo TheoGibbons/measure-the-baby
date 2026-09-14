@@ -205,6 +205,17 @@ outside the outer chart curves. Weight and BMI apply WHO's SD-interval adjustmen
 beyond z-scores of ±3. Chart curves are sampled separately; percentile calculations
 do not interpolate between the drawn curves or round age to months.
 
+Calculated BMI is weight in kilograms divided by squared length/height in metres.
+It retains full precision for the percentile calculation and rounds only for display.
+It uses measurements on the same date; a manually entered BMI takes precedence.
+Head circumference uses the recorded centimetre value (inches are converted with
+1 in = 2.54 cm) and the sex-specific WHO head-circumference-for-age reference.
+
+Regression checks include BMI and head circumference values from WHO's separate
+published percentile workbooks, for both sexes from birth through 60 months.
+Source URLs and workbook hashes are recorded in
+`tests/fixtures/who-bmi-head-percentiles.json`.
+
 The WHO curves stop at 60 months; personal measurements and the chart age axis may
 continue beyond that point. WHO's daily tables use lying-down length through day
 730 and standing height from day 731. The height and BMI curves preserve that

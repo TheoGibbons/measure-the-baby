@@ -1,4 +1,4 @@
-const CACHE = "measure-the-baby-v5";
+const CACHE = "measure-the-baby-v6";
 const SHELL = ["/", "/index.html", "/manifest.webmanifest", "/icon.svg", "/growth-data.json?v=2"];
 
 self.addEventListener("install", (event) => {

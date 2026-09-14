@@ -1,0 +1,70 @@
+{
+  "note": "WHO published percentile values, rounded to 3 decimals in the source; rows are [age in days, values in percentile order]. Independently downloaded from percentile workbooks, not generated from application LMS data.",
+  "percentiles": [1, 15, 25, 50, 75, 85, 99],
+  "sources": [
+    {
+      "sex": "male",
+      "metric": "bmi",
+      "url": "https://cdn.who.int/media/docs/default-source/child-growth/child-growth-standards/indicators/body-mass-index-for-age/expanded-tables/bfa-boys-percentiles-expanded-tables.xlsx",
+      "sha256": "b4b0fdf7d8613e6035a91910e5f554a28276d415ab066c8d49da1521a5cb38a3",
+      "rows": [
+        [0, [10.811, 12.16, 12.578, 13.407, 14.309, 14.826, 16.879]],
+        [30, [12.011, 13.564, 14.025, 14.914, 15.843, 16.359, 18.296]],
+        [90, [13.85, 15.458, 15.942, 16.883, 17.879, 18.437, 20.57]],
+        [365, [14.039, 15.482, 15.925, 16.799, 17.742, 18.28, 20.393]],
+        [730, [13.263, 14.547, 14.945, 15.736, 16.597, 17.093, 19.071]],
+        [731, [13.492, 14.806, 15.212, 16.019, 16.897, 17.401, 19.411]],
+        [848, [13.334, 14.66, 15.067, 15.872, 16.743, 17.24, 19.202]],
+        [1826, [12.57, 13.919, 14.343, 15.192, 16.129, 16.674, 18.891]]
+      ]
+    },
+    {
+      "sex": "male",
+      "metric": "head",
+      "url": "https://cdn.who.int/media/docs/default-source/child-growth/child-growth-standards/indicators/head-circumference-for-age/expanded-tables/hcfa-boys-percentiles-expanded-tables.xlsx",
+      "sha256": "3e4d401a557841a93d56d552889d2778e4ad4e42585c8d768f5514aaf65979ff",
+      "rows": [
+        [0, [31.507, 33.145, 33.605, 34.462, 35.319, 35.778, 37.417]],
+        [30, [34.527, 36.033, 36.456, 37.244, 38.031, 38.454, 39.96]],
+        [90, [37.712, 39.236, 39.663, 40.46, 41.257, 41.685, 43.209]],
+        [365, [43.075, 44.732, 45.197, 46.064, 46.93, 47.395, 49.052]],
+        [730, [45.083, 46.839, 47.331, 48.249, 49.167, 49.66, 51.416]],
+        [731, [45.087, 46.843, 47.335, 48.254, 49.172, 49.664, 51.42]],
+        [848, [45.495, 47.278, 47.779, 48.711, 49.644, 50.144, 51.927]],
+        [1826, [47.261, 49.189, 49.729, 50.737, 51.745, 52.286, 54.213]]
+      ]
+    },
+    {
+      "sex": "female",
+      "metric": "bmi",
+      "url": "https://cdn.who.int/media/docs/default-source/child-growth/child-growth-standards/indicators/body-mass-index-for-age/expanded-tables/bfa-girls-percentiles-expanded-tables.xlsx",
+      "sha256": "b89cfc51dd733f48e63d56d9f66016ccfed7156774b23c745f0f25e909c75e47",
+      "rows": [
+        [0, [10.764, 12.118, 12.529, 13.336, 14.199, 14.686, 16.571]],
+        [30, [11.537, 13.148, 13.624, 14.542, 15.5, 16.03, 18.016]],
+        [90, [13.152, 14.839, 15.348, 16.339, 17.389, 17.979, 20.234]],
+        [365, [13.428, 14.955, 15.425, 16.358, 17.369, 17.947, 20.235]],
+        [730, [12.767, 14.132, 14.557, 15.405, 16.336, 16.873, 19.036]],
+        [731, [13.02, 14.402, 14.832, 15.688, 16.624, 17.163, 19.326]],
+        [848, [12.934, 14.306, 14.732, 15.581, 16.51, 17.045, 19.189]],
+        [1826, [12.33, 13.84, 14.316, 15.275, 16.338, 16.957, 19.493]]
+      ]
+    },
+    {
+      "sex": "female",
+      "metric": "head",
+      "url": "https://cdn.who.int/media/docs/default-source/child-growth/child-growth-standards/indicators/head-circumference-for-age/expanded-tables/hcfa-girls-percentiles-expanded-tables.xlsx",
+      "sha256": "3e097ab1c73c9b376faea2bde2f10de761efbde486c9d6092a8ef63d21f2a5ff",
+      "rows": [
+        [0, [31.123, 32.651, 33.08, 33.879, 34.678, 35.106, 36.634]],
+        [30, [33.789, 35.301, 35.725, 36.516, 37.307, 37.732, 39.244]],
+        [90, [36.598, 38.198, 38.647, 39.483, 40.319, 40.768, 42.368]],
+        [365, [41.733, 43.486, 43.977, 44.894, 45.811, 46.302, 48.055]],
+        [730, [43.933, 45.733, 46.239, 47.18, 48.121, 48.626, 50.427]],
+        [731, [43.939, 45.738, 46.243, 47.185, 48.126, 48.631, 50.43]],
+        [848, [44.425, 46.234, 46.742, 47.688, 48.634, 49.141, 50.95]],
+        [1826, [46.613, 48.448, 48.963, 49.923, 50.882, 51.397, 53.232]]
+      ]
+    }
+  ]
+}
