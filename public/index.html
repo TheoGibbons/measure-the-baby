@@ -569,6 +569,16 @@
 
     .chart-footnote .legend-reference { border-top-color: #768582; border-top-width: 1px; }
 
+    .chart-source {
+      margin-top: 18px;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.5;
+      text-align: center;
+    }
+
+    .chart-source a { color: var(--green-2); text-underline-offset: 2px; }
+
     .no-profile {
       min-height: 62vh;
       display: grid;
@@ -932,6 +942,9 @@
           <footer class="chart-footnote"><span><i class="legend-line"></i>Recorded / calculated</span><span><i class="legend-line legend-reference"></i>WHO 3rd, 15th, 50th, 85th, 97th</span></footer>
         </article>
       </section>
+      <footer class="chart-source">
+        Growth reference data comes from the <a href="https://www.who.int/tools/child-growth-standards/standards" target="_blank" rel="noopener noreferrer">WHO (World Health Organisation)</a>.
+      </footer>
     </div>
   </main>
 
