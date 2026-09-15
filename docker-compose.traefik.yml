@@ -17,6 +17,12 @@ services:
       traefik.http.services.measure-the-baby.loadbalancer.healthcheck.path: /healthz
       traefik.http.services.measure-the-baby.loadbalancer.healthcheck.interval: 30s
       traefik.http.services.measure-the-baby.loadbalancer.healthcheck.timeout: 3s
+      # A LIVE deploy runs the old and new release side by side for a few
+      # seconds. The cookie keeps a browser on one of them, so a page load or the
+      # service worker's app-shell install never mixes files from both releases.
+      traefik.http.services.measure-the-baby.loadbalancer.sticky.cookie.name: measure-the-baby-lb
+      traefik.http.services.measure-the-baby.loadbalancer.sticky.cookie.httponly: 'true'
+      traefik.http.services.measure-the-baby.loadbalancer.sticky.cookie.samesite: lax
       traefik.http.middlewares.measure-the-baby-compress.compress: 'true'
       traefik.http.middlewares.measure-the-baby-security.headers.stsSeconds: '31536000'
       traefik.http.middlewares.measure-the-baby-security.headers.contentTypeNosniff: 'true'

@@ -7,7 +7,8 @@ name: measure-the-baby
 services:
   app:
     build: .
-    container_name: measure-the-baby
+    # No container_name: a LIVE deploy briefly runs the new release beside the old
+    # one (scripts/deploy.sh), and two containers cannot share a fixed name.
     restart: unless-stopped
     expose:
       - '3000'

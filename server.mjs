@@ -511,7 +511,18 @@ export function closeDatabase() {
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
-  createApp().listen(PORT, "0.0.0.0", () => {
+  const server = createApp().listen(PORT, "0.0.0.0", () => {
     console.log(`Measure the Baby is running at http://localhost:${PORT}`);
   });
+
+  // As PID 1 in the container, Node ignores SIGTERM unless something handles it,
+  // so `docker stop` would wait out its timeout and then kill it mid-write.
+  for (const signal of ["SIGINT", "SIGTERM"]) {
+    process.once(signal, () => {
+      server.close(() => {
+        closeDatabase();
+        process.exit(0);
+      });
+    });
+  }
 }

@@ -64,6 +64,13 @@ adds TLS through the shared `letsencrypt` resolver.
 
 Security group: 22 for administration, 80 and 443 for Traefik. Nothing else.
 
+Deploys on this path do not take the site down. The script starts the new release beside
+the old one with the [docker-rollout](https://github.com/wowu/docker-rollout) CLI plugin,
+waits for it to pass its health check, lets Traefik drain the old one, then removes it. A
+release that never turns healthy is discarded and the old one keeps serving. Deploying
+hobby-traefik installs the plugin; the script stops before pulling, with the install
+command, on a server that lacks it.
+
 ## Deploying Locally
 
 Needs only Docker. Nothing is published beyond loopback.
@@ -144,6 +151,10 @@ gh secret set EC2_KNOWN_HOSTS     --env production \
 
 The deploy stops rather than overwrite tracked files edited directly on the server.
 Commit through Git instead of letting the live and local copies drift.
+
+A push deploys with the `scripts/deploy.sh` already on the server, which then pulls. A
+change to the script itself therefore takes effect from the deploy after the one that
+ships it.
 
 ## What it is
 
@@ -260,6 +271,13 @@ every account, profile, and measurement.
 SQLite data lives in the Docker volume `measure-the-baby_growth_data`. The in-app CSV
 export is the simplest portable backup. For a full backup, stop the stack and copy the
 contents of that named volume.
+
+During a LIVE deploy two containers share that volume for up to half a minute, which
+SQLite's WAL mode handles. The Traefik overlay sets a `measure-the-baby-lb` sticky cookie,
+holding only an identifier for the container, so a browser loads the page and the service
+worker installs its app shell from one release rather than a mix of both. Container
+names change on every deploy, so address the service rather than the container:
+`docker compose -f docker-compose.yml -f docker-compose.traefik.yml -f docker-compose.prod.yml logs app`.
 
 ## Security notes
 

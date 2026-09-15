@@ -9,3 +9,4 @@ services:
       traefik.http.routers.measure-the-baby.entrypoints: websecure
       traefik.http.routers.measure-the-baby.tls: 'true'
       traefik.http.routers.measure-the-baby.tls.certresolver: letsencrypt
+      traefik.http.services.measure-the-baby.loadbalancer.sticky.cookie.secure: 'true'
