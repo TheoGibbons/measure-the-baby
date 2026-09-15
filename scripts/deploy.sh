@@ -39,20 +39,23 @@ compose=(docker compose "${compose_args[@]}")
 # Every service must be in exactly one list; see "Decide which services to roll"
 # in hobby-traefik's playbook-zero-downtime-deploys.md.
 #   before_rollout  what the rolled services need running first (databases)
+#   one_shot        jobs that run to completion before the rollout (migrations)
 #   rolled          Traefik-routed services, swapped without downtime
 #   after_rollout   everything else, updated with a plain `up`
 before_rollout=()
+one_shot=()
 rolled=(app)
 after_rollout=()
+long_running=("${before_rollout[@]}" "${rolled[@]}" "${after_rollout[@]}")
 
 "${compose[@]}" config --quiet
 
 # A service missing from the lists would be started once and never updated, so a
 # service added to Compose later has to be classified before the next deploy.
-listed=" ${before_rollout[*]} ${rolled[*]} ${after_rollout[*]} "
+listed=" ${long_running[*]} ${one_shot[*]} "
 for service in $("${compose[@]}" config --services); do
   if [[ "$listed" != *" $service "* ]]; then
-    echo "Service '$service' is not in before_rollout, rolled or after_rollout in scripts/deploy.sh." >&2
+    echo "Service '$service' is not in a service list in scripts/deploy.sh." >&2
     exit 1
   fi
 done
@@ -62,6 +65,15 @@ done
 if (( ${#before_rollout[@]} )); then
   "${compose[@]}" up -d --wait --wait-timeout 90 "${before_rollout[@]}"
 fi
+
+# One-shot jobs finish while the previous release is still serving, so
+# migrations must stay backward compatible with it. They run through `up` rather
+# than `run` so their service container is replaced too: the rollout starts the
+# rolled services' dependencies again, and would otherwise re-run the previous
+# release's job.
+for service in "${one_shot[@]}"; do
+  "${compose[@]}" up --no-deps --exit-code-from "$service" "$service"
+done
 
 # `up` would stop the running release before starting the new one, and the site
 # would be down until the new one passed its health check. docker rollout starts
@@ -99,6 +111,8 @@ if (( ${#after_rollout[@]} )); then
 fi
 
 # Removes containers of services no longer in the Compose files and confirms
-# everything is healthy. --no-recreate stops it replacing what was just rolled.
-"${compose[@]}" up -d --no-recreate --remove-orphans --wait --wait-timeout 90
+# every long-running service is healthy. Naming them with --no-deps keeps it from
+# re-running one-shot jobs or waiting on their exited containers, and
+# --no-recreate stops it replacing what was just rolled.
+"${compose[@]}" up -d --no-deps --no-recreate --remove-orphans --wait --wait-timeout 90 "${long_running[@]}"
 "${compose[@]}" ps
